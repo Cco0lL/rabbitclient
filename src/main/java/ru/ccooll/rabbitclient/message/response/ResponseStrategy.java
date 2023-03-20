@@ -62,7 +62,7 @@ public interface ResponseStrategy<T> {
 
         @NotNull List<@NotNull IncomingMessage<T>> incomingMessages();
 
-        void startConsume(@NotNull String replyTo);
+        void startConsume();
 
         boolean isCompleted();
 
@@ -96,8 +96,8 @@ public interface ResponseStrategy<T> {
             }
 
             @Override
-            public void startConsume(@NotNull String replyTo) {
-                batchMessages.channel().addConsumer(replyTo, ((consumerTag, message) -> {
+            public void startConsume() {
+                batchMessages.channel().batchConsumer(batchMessages.replyToKey(), ((consumerTag, message) -> {
                     val future = futuresMap.get(message.getProperties().getCorrelationId());
                     future.complete(message);
                 }));

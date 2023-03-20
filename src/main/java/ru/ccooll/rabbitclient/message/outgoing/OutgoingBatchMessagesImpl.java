@@ -32,6 +32,7 @@ public record OutgoingBatchMessagesImpl(
             while (!responseStrategy.isCompleted());
             future.complete(new IncomingBatchMessagesImpl<>(replyToKey, channel, responseStrategy.incomingMessages()));
         });
+        responseStrategy.startConsume();
 
         return future.thenApply(it -> {
             channel.removeConsumer(replyToKey);
