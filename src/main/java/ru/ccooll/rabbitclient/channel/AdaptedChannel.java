@@ -12,7 +12,6 @@ import ru.ccooll.rabbitclient.message.outgoing.OutgoingBatchMessages;
 import ru.ccooll.rabbitclient.message.outgoing.OutgoingMessage;
 
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 
 public interface AdaptedChannel {

@@ -1,6 +1,5 @@
 package ru.ccooll.rabbitclient.message.incoming;
 
-import lombok.val;
 import org.jetbrains.annotations.NotNull;
 import ru.ccooll.rabbitclient.channel.AdaptedChannel;
 import ru.ccooll.rabbitclient.message.outgoing.OutgoingBatchMessages;

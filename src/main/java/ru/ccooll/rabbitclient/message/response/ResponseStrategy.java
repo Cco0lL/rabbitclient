@@ -1,6 +1,5 @@
 package ru.ccooll.rabbitclient.message.response;
 
-import com.rabbitmq.client.DeliverCallback;
 import com.rabbitmq.client.Delivery;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -17,8 +16,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
 
 @FunctionalInterface
 public interface ResponseStrategy<T> {
@@ -70,16 +67,13 @@ public interface ResponseStrategy<T> {
         boolean isCompleted();
 
         @Getter
+        @RequiredArgsConstructor
         @Accessors(fluent = true)
         class BatchResponseStrategyImpl<T> implements BatchResponseStrategy<T> {
 
             private final List<IncomingMessage<T>> incomingMessages = new ArrayList<>();
             private final Map<String, CompletableFuture<Delivery>> futuresMap = new HashMap<>();
             private final OutgoingBatchMessages batchMessages;
-
-            public BatchResponseStrategyImpl(OutgoingBatchMessages batchMessages) {
-                this.batchMessages = batchMessages;
-            }
 
             @Override
             public CompletableFuture<IncomingMessage<T>> processResponse(OutgoingMessage message,

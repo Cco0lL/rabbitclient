@@ -1,8 +1,5 @@
 package ru.ccooll.rabbitclient.message.outgoing;
 
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import lombok.experimental.Accessors;
 import lombok.val;
 import org.jetbrains.annotations.NotNull;
 import ru.ccooll.rabbitclient.channel.AdaptedChannel;
