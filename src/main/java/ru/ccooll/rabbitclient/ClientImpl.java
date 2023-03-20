@@ -16,20 +16,19 @@ import java.util.concurrent.TimeoutException;
 
 @RequiredArgsConstructor
 public class ClientImpl implements Client {
-    
+
     private final ConnectionFactory connectionFactory;
     private final ExecutorService clientWorker;
     private final Serializer defaultSerializer;
     private final Deserializer defaultDeserializer;
     private final String clientName;
 
-    
     private Connection connection;
-    
+
     @Override
     public void openConnection() throws IOException, TimeoutException {
         connection = connectionFactory.newConnection(clientWorker, clientName);
-    }   
+    }
 
     @SneakyThrows
     @Override
