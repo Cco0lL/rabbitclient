@@ -12,6 +12,6 @@ public interface IncomingBatchMessages<T> extends BatchMessages, Incoming {
 
     @NotNull List<@NotNull IncomingMessage<T>> incomingMessages();
 
-    @NotNull <R> OutgoingBatchMessages sendBatchedResponse(
+    @NotNull <R> OutgoingBatchMessages sendBatchResponse(
             @NotNull Function<IncomingMessage<T>, R> responseFunction);
 }

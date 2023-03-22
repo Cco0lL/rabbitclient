@@ -13,7 +13,7 @@ public class SimpleSerializer implements Serializer {
     public byte @NotNull [] serialize(@Nullable Object object) {
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream(512);
              ObjectOutputStream out = new ObjectOutputStream(baos)) {
-            out.writeObject(baos);
+            out.writeObject(object);
             return baos.toByteArray();
         } catch (final IOException ex) {
             throw new RuntimeException(ex);

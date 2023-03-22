@@ -20,22 +20,22 @@ public record OutgoingBatchMessagesImpl(
         return channel.isQueueExist(replyToKey);
     }
 
-    @SuppressWarnings({"StatementWithEmptyBody"})
     @Override
     public @NotNull <T> CompletableFuture<IncomingBatchMessages<T>> responseRequest(@NotNull Class<T> rClass) {
+        channel.declareQueue(replyToKey);
         val responseStrategy = ResponseStrategy.<T>batch(this);
         outgoingMessages.forEach(it -> it.responseRequest(rClass, responseStrategy));
 
         val future = new CompletableFuture<IncomingBatchMessages<T>>();
-
         Thread.startVirtualThread(() -> {
-            while (!responseStrategy.isCompleted());
+            //noinspection StatementWithEmptyBody
+            while (!responseStrategy.isCompleted()) ;
             future.complete(new IncomingBatchMessagesImpl<>(replyToKey, channel, responseStrategy.incomingMessages()));
         });
-        responseStrategy.startConsume();
+        val consumerTag = responseStrategy.startConsume();
 
         return future.thenApply(it -> {
-            channel.removeConsumer(replyToKey);
+            channel.removeBatchConsumer(consumerTag, responseStrategy.lastDeliveryTag());
             return it;
         });
     }

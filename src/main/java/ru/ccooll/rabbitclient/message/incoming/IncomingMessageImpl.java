@@ -7,6 +7,7 @@ import ru.ccooll.rabbitclient.RoutingData;
 import ru.ccooll.rabbitclient.channel.AdaptedChannel;
 import ru.ccooll.rabbitclient.message.outgoing.OutgoingMessage;
 import lombok.val;
+import ru.ccooll.rabbitclient.util.MessagePropertiesUtils;
 
 public record IncomingMessageImpl<T>(
         @NotNull AdaptedChannel channel,
@@ -19,8 +20,10 @@ public record IncomingMessageImpl<T>(
     }
 
     @Override
-    public <R> @NotNull OutgoingMessage sendResponse(@Nullable R response) {
-        val routingData = RoutingData.of(properties.getReplyTo());
-        return channel.send(routingData, response);
+    public <R> @NotNull OutgoingMessage sendResponse(@NotNull R response) {
+        val replyTo = properties.getReplyTo();
+        val routingData = RoutingData.of(replyTo);
+        val responseProperties = MessagePropertiesUtils.createWithCorrelationId(properties.getCorrelationId());
+        return channel.send(routingData, response, responseProperties);
     }
 }

@@ -36,8 +36,9 @@ public class ClientImpl implements Client {
         return new AdaptedChannelImpl(connection.createChannel(), defaultSerializer, defaultDeserializer);
     }
 
+    @SneakyThrows
     @Override
-    public void closeConnection() throws IOException {
+    public void closeConnection() {
         clientWorker.shutdown();
         connection.close();
     }

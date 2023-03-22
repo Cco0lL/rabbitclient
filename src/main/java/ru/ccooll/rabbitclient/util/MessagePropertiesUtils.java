@@ -2,27 +2,38 @@ package ru.ccooll.rabbitclient.util;
 
 import com.rabbitmq.client.AMQP;
 import lombok.experimental.UtilityClass;
+import lombok.val;
+
 import java.util.UUID;
 
 @UtilityClass
 public class MessagePropertiesUtils {
 
     public String generateReplyToKey(UUID uuid) {
-        return "reply-to." + uuid;
-    }
-    
-    public AMQP.BasicProperties createBatchedProperties(UUID replyToUuuid) {
-        return createProperties(UUID.randomUUID(), replyToUuuid);
+        return generateReplyToKey(uuid.toString());
     }
 
-    public AMQP.BasicProperties createProperties(UUID uuid) {
-        return createProperties(uuid, uuid);
+    public String generateReplyToKey(String replyTo) {
+        return "reply-to." + replyTo;
     }
     
-    public AMQP.BasicProperties createProperties(UUID correlationUuid, UUID replyToUuuid) {
+    public AMQP.BasicProperties createWithReplyTo(String replyTo) {
+        return create(UUID.randomUUID().toString(), replyTo);
+    }
+
+    public AMQP.BasicProperties createWithCorrelationId(String correlationUuid) {
+        return create(correlationUuid, UUID.randomUUID().toString());
+    }
+
+    public AMQP.BasicProperties create(UUID uuid) {
+        val asString = uuid.toString();
+        return create(asString, asString);
+    }
+    
+    public AMQP.BasicProperties create(String correlationId, String replyTo) {
         return new AMQP.BasicProperties.Builder()
-                .correlationId(correlationUuid.toString())
-                .replyTo(generateReplyToKey(replyToUuuid))
+                .correlationId(correlationId)
+                .replyTo(generateReplyToKey(replyTo))
                 .build();
     }
 }

@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicLong;
 
 @FunctionalInterface
 public interface ResponseStrategy<T> {
@@ -36,18 +37,15 @@ public interface ResponseStrategy<T> {
         public CompletableFuture<IncomingMessage<T>> processResponse(OutgoingMessage message,
                                                                      Class<T> rClass) {
             val channel = message.channel();
-
-            val replyTo = message.properties().getReplyTo();
+            val outgoingProperties = message.properties();
+            val replyTo = outgoingProperties.getReplyTo();
             channel.declareQueue(replyTo);
 
             val future = new CompletableFuture<IncomingMessage<T>>();
-
             val consumerTag = channel.addConsumer(replyTo, (tag, incoming) -> {
                 val incomingProperties = incoming.getProperties();
-                if (incomingProperties.getCorrelationId().equals(incomingProperties.getCorrelationId())) {
-                    val fromBytes = channel.deserializer().deserialize(incoming.getBody(), rClass);
-                    val incomingMessage = new IncomingMessageImpl<>(channel, incomingProperties, fromBytes);
-                    future.complete(incomingMessage);
+                if (outgoingProperties.getCorrelationId().equals(incomingProperties.getCorrelationId())) {
+                    future.complete(channel.deliveryToIncomeMessage(incoming, rClass));
                 }
             });
 
@@ -62,7 +60,9 @@ public interface ResponseStrategy<T> {
 
         @NotNull List<@NotNull IncomingMessage<T>> incomingMessages();
 
-        void startConsume();
+        @NotNull String startConsume();
+
+        long lastDeliveryTag();
 
         boolean isCompleted();
 
@@ -72,6 +72,7 @@ public interface ResponseStrategy<T> {
         class BatchResponseStrategyImpl<T> implements BatchResponseStrategy<T> {
 
             private final List<IncomingMessage<T>> incomingMessages = new ArrayList<>();
+            private final AtomicLong lastDeliveryTag = new AtomicLong();
             private final Map<String, CompletableFuture<Delivery>> futuresMap = new HashMap<>();
             private final OutgoingBatchMessages batchMessages;
 
@@ -96,11 +97,18 @@ public interface ResponseStrategy<T> {
             }
 
             @Override
-            public void startConsume() {
-                batchMessages.channel().batchConsumer(batchMessages.replyToKey(), ((consumerTag, message) -> {
+            public @NotNull String startConsume() {
+                val channel = batchMessages.channel();
+                val replyToKey = batchMessages.replyToKey();
+                return channel.addConsumer(replyToKey, false, (consumerTag, message) -> {
                     val future = futuresMap.get(message.getProperties().getCorrelationId());
                     future.complete(message);
-                }));
+                });
+            }
+
+            @Override
+            public long lastDeliveryTag() {
+                return lastDeliveryTag.get();
             }
 
             @Override

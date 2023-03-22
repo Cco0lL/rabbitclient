@@ -12,5 +12,5 @@ public interface Client {
 
     @NotNull AdaptedChannel createChannel();
 
-    void closeConnection() throws IOException;
+    void closeConnection();
 }
