@@ -1,5 +1,6 @@
 plugins {
     id("java")
+    `maven-publish`
 }
 
 group = "ru.ccooll.rabbitclient"
@@ -26,5 +27,16 @@ tasks {
     }
     getByName<Test>("test") {
         useJUnitPlatform()
+    }
+}
+
+publishing {
+    publications {
+        create<MavenPublication>("maven") {
+            groupId = "ru.ccooll"
+            artifactId = "rabbitclient"
+            version = "1.0"
+            from(components["java"])
+        }
     }
 }

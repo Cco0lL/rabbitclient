@@ -29,13 +29,14 @@ public interface ResponseStrategy<T> {
         return new BatchResponseStrategy.BatchResponseStrategyImpl<>(batchMessages);
     }
 
-    CompletableFuture<IncomingMessage<T>> processResponse(OutgoingMessage message, Class<T> rClass);
+     CompletableFuture<IncomingMessage<T>> processResponse(@NotNull OutgoingMessage message,
+                                                           @NotNull Class<T> rClass);
 
     class SingleResponseStrategy<T> implements ResponseStrategy<T> {
 
         @Override
-        public CompletableFuture<IncomingMessage<T>> processResponse(OutgoingMessage message,
-                                                                     Class<T> rClass) {
+        public CompletableFuture<IncomingMessage<T>> processResponse(@NotNull OutgoingMessage message,
+                                                                     @NotNull Class<T> rClass) {
             val channel = message.channel();
             val outgoingProperties = message.properties();
             val replyTo = outgoingProperties.getReplyTo();
@@ -77,8 +78,8 @@ public interface ResponseStrategy<T> {
             private final OutgoingBatchMessages batchMessages;
 
             @Override
-            public CompletableFuture<IncomingMessage<T>> processResponse(OutgoingMessage message,
-                                                                         Class<T> responseClass) {
+            public CompletableFuture<IncomingMessage<T>> processResponse(@NotNull OutgoingMessage message,
+                                                                         @NotNull Class<T> responseClass) {
                 val channel = batchMessages.channel();
                 val correlationId = message.properties().getCorrelationId();
                 CompletableFuture<Delivery> future = new CompletableFuture<>();

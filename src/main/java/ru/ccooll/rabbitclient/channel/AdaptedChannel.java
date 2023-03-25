@@ -40,7 +40,6 @@ public interface AdaptedChannel {
     @NotNull <T> IncomingMessage<T> deliveryToIncomeMessage(@NotNull Delivery delivery,
                                                             @NotNull Class<T> iClass);
 
-
     @NotNull Deserializer deserializer();
 
     @NotNull Serializer serializer();
