@@ -4,8 +4,11 @@ import com.rabbitmq.client.ConnectionFactory;
 import org.jetbrains.annotations.NotNull;
 import ru.ccooll.rabbitclient.common.Deserializer;
 import ru.ccooll.rabbitclient.common.Serializer;
+import ru.ccooll.rabbitclient.error.ErrorHandler;
 
+import java.io.IOException;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeoutException;
 
 public interface ClientFactory {
 
@@ -13,11 +16,14 @@ public interface ClientFactory {
         return new ClientFactoryImpl();
     }
 
-    @NotNull ClientFactory setConnectionFactory(@NotNull ConnectionFactory connectionFactory);
+    ClientFactory setConnectionFactory(@NotNull ConnectionFactory connectionFactory);
 
-    @NotNull ClientFactory setDefaultSerializer(@NotNull Serializer serializer);
+    ClientFactory setDefaultSerializer(@NotNull Serializer serializer);
 
-    @NotNull ClientFactory setDefaultDeserializer(@NotNull Deserializer deserializer);
+    ClientFactory setDefaultDeserializer(@NotNull Deserializer deserializer);
 
-    @NotNull Client newClient(@NotNull String name, @NotNull ExecutorService clientWorker);
+    ClientFactory setDefaultErrorHandler(@NotNull ErrorHandler handler);
+
+    Client createNewAndConnect(@NotNull String name, @NotNull ExecutorService clientWorker)
+            throws IOException, TimeoutException;
 }

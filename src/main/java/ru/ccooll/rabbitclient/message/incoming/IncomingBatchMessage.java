@@ -3,10 +3,12 @@ package ru.ccooll.rabbitclient.message.incoming;
 import com.rabbitmq.client.AMQP;
 import ru.ccooll.rabbitclient.channel.AdaptedChannel;
 
-public record IncomingMessage<T>(
+import java.util.List;
+
+public record IncomingBatchMessage<T>(
         AdaptedChannel channel,
         AMQP.BasicProperties properties,
-        T message) implements Incoming<T> {
+        List<T> message) implements Incoming<List<T>> {
 
     @Override
     public boolean isWaitingForResponse() {

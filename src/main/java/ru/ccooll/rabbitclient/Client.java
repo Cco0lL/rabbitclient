@@ -1,16 +1,14 @@
 package ru.ccooll.rabbitclient;
 
-import org.jetbrains.annotations.NotNull;
 import ru.ccooll.rabbitclient.channel.AdaptedChannel;
+import ru.ccooll.rabbitclient.common.Deserializer;
+import ru.ccooll.rabbitclient.common.Serializer;
 
-import java.io.IOException;
-import java.util.concurrent.TimeoutException;
+public interface Client extends AutoCloseable {
 
-public interface Client {
+    AdaptedChannel createChannel();
 
-    void openConnection() throws IOException, TimeoutException;
-
-    @NotNull AdaptedChannel createChannel();
-
-    void closeConnection();
+    AdaptedChannel createChannel(Serializer serializer, Deserializer deserializer);
 }
+
+

@@ -6,15 +6,25 @@ plugins {
 group = "ru.ccooll.rabbitclient"
 version = "1.0-SNAPSHOT"
 
+java {
+    sourceCompatibility = JavaVersion.VERSION_19
+    targetCompatibility = JavaVersion.VERSION_19
+}
+
 repositories {
     mavenCentral()
 }
 
 dependencies {
+    //syntax helpful libs
     compileOnly("org.projectlombok:lombok:1.18.26")
     annotationProcessor("org.projectlombok:lombok:1.18.26")
-
     implementation("org.jetbrains:annotations:24.0.1")
+
+    //helpful libs
+    implementation("com.google.guava:guava:31.1-jre")
+
+    //rabbit
     implementation("com.rabbitmq:amqp-client:5.16.0")
 
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.9.2")
@@ -22,9 +32,6 @@ dependencies {
 }
 
 tasks {
-    compileJava {
-        options.compilerArgs.add("--enable-preview")
-    }
     getByName<Test>("test") {
         useJUnitPlatform()
     }

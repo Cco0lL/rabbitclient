@@ -9,6 +9,8 @@ import java.util.UUID;
 @UtilityClass
 public class MessagePropertiesUtils {
 
+    public static final String END_BATCH_POINTER = "batch-end-pointer";
+
     public String generateReplyToKey(UUID uuid) {
         return generateReplyToKey(uuid.toString());
     }
@@ -23,6 +25,10 @@ public class MessagePropertiesUtils {
 
     public AMQP.BasicProperties createWithCorrelationId(String correlationUuid) {
         return create(correlationUuid, UUID.randomUUID().toString());
+    }
+
+    public AMQP.BasicProperties create() {
+        return create(UUID.randomUUID());
     }
 
     public AMQP.BasicProperties create(UUID uuid) {
