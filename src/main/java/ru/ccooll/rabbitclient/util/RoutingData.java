@@ -4,6 +4,9 @@ import com.google.common.base.Preconditions;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * represents exchange key and routing key pair
+ */
 public interface RoutingData {
 
     static RoutingData of(@NotNull String exchange, @NotNull String routingKey) {

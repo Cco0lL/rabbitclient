@@ -13,38 +13,56 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
+/**
+ * represents interface that able to request response
+ * from receiver
+ */
 public interface Outgoing extends Message {
 
+    /**
+     * @return if response already requested
+     */
     boolean isRequestedResponse();
 
     default <T> CompletableFuture<IncomingMessage<T>> responseRequest(Class<T> rClass) {
+        if (isRequestedResponse()) {
+            throw new IllegalStateException("response already requested");
+        }
+
         CompletableFuture<IncomingMessage<T>> future = new CompletableFuture<>();
 
         val channel = channel();
         val properties = properties();
 
+        channel.declareQueue(properties.getReplyTo(), true);
         CallbackConsumer consumer = (deliveryTag, incomingProperties, body) -> {
             val errorHandler = channel.errorHandler();
             val deserializer = channel.deserializer();
             val message = errorHandler.computeSafe(() -> deserializer.deserialize(body, rClass));
-            future.complete(new IncomingMessage<T>(channel, incomingProperties, message));
+            future.complete(new IncomingMessage<>(channel, incomingProperties, message));
             channel.ack(deliveryTag, false);
         };
         val ct = consumer.consume(channel, properties);
 
         return future.thenApply(it -> {
             channel.removeConsumer(ct);
+            channel.removeQueue(properties.getReplyTo());
             return it;
         });
     }
 
     default <T> CompletableFuture<IncomingBatchMessage<T>> responseRequestBatch(Class<T> rClass) {
+        if (isRequestedResponse()) {
+            throw new IllegalStateException("response already requested");
+        }
+
         List<T> messages = Collections.synchronizedList(new ArrayList<>());
         CompletableFuture<IncomingBatchMessage<T>> future = new CompletableFuture<>();
 
         val properties = properties();
         val channel = channel();
 
+        channel.declareQueue(properties.getReplyTo(), true);
         CallbackConsumer consumer = (deliveryTag, incomingProperties, body) -> {
             val errorHandler = channel.errorHandler();
             val deserializer = channel.deserializer();
@@ -63,6 +81,7 @@ public interface Outgoing extends Message {
 
         return future.thenApply(it -> {
             channel.removeConsumer(ct);
+            channel.removeQueue(properties.getReplyTo());
             return it;
         });
     }

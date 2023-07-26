@@ -25,9 +25,9 @@ public record AdaptedChannelImpl(Channel channel, Serializer serializer, Deseria
     }
 
     @Override
-    public void declareQueue(String queueKey) {
+    public void declareQueue(String queueKey, boolean autoDelete) {
         errorHandler.computeSafe(() ->
-                channel.queueDeclare(queueKey, false, false, false, null));
+                channel.queueDeclare(queueKey, false, false, autoDelete, null));
     }
 
     @Override

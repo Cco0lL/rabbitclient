@@ -9,10 +9,18 @@ import ru.ccooll.rabbitclient.util.MessagePropertiesUtils;
 
 import java.util.List;
 
+/**
+ * represents incoming message interface that able to
+ * send response to sender
+ * @param <T> - message object type
+ */
 public interface Incoming<T> extends Message {
 
     T message();
 
+    /**
+     * @return true if sender waits for response
+     */
     boolean isWaitingForResponse();
 
     default <R> OutgoingMessage sendResponse(R response) {

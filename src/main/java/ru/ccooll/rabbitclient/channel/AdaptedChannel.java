@@ -35,8 +35,9 @@ public interface AdaptedChannel {
      * or request of declare has expired
      *
      * @param queueKey - routing key of queue
+     * @param autoDelete - true if channel should delete when queue no longer in use
      */
-    void declareQueue(String queueKey);
+    void declareQueue(String queueKey, boolean autoDelete);
 
     /**
      * removes an exchange, throws IOException that handles by errors handler
