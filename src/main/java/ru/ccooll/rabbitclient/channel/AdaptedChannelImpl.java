@@ -12,6 +12,7 @@ import ru.ccooll.rabbitclient.message.outgoing.OutgoingMessage;
 import ru.ccooll.rabbitclient.util.MessagePropertiesUtils;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.BiConsumer;
@@ -100,8 +101,10 @@ public record AdaptedChannelImpl(Channel channel, Serializer serializer, Deseria
 
     @Override
     public OutgoingBatchMessage prepareAndSend(RoutingData routingData, List<Object> messages) {
-        val properties = MessagePropertiesUtils.create();
-        properties.getHeaders().put(MessagePropertiesUtils.END_BATCH_POINTER, true);
+        val headers = new HashMap<String, Object>();
+        headers.put(MessagePropertiesUtils.END_BATCH_POINTER, true);
+        val properties = MessagePropertiesUtils.create(UUID.randomUUID().toString(),
+                MessagePropertiesUtils.generateReplyToKey(), headers);
         return convertAndSend(routingData, messages, properties);
     }
 

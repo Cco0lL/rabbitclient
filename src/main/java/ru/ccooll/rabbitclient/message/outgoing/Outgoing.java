@@ -19,9 +19,8 @@ import java.util.concurrent.CompletableFuture;
  */
 public interface Outgoing extends Message {
 
-    /**
-     * @return if response already requested
-     */
+    void markRequestedResponse();
+
     boolean isRequestedResponse();
 
     default <T> CompletableFuture<IncomingMessage<T>> responseRequest(Class<T> rClass) {
@@ -43,6 +42,7 @@ public interface Outgoing extends Message {
             channel.ack(deliveryTag, false);
         };
         val ct = consumer.consume(channel, properties);
+        markRequestedResponse();
 
         return future.thenApply(it -> {
             channel.removeConsumer(ct);
@@ -70,6 +70,7 @@ public interface Outgoing extends Message {
             messages.add(message);
 
             val headers = incomingProperties.getHeaders();
+            if (headers == null) return;
             //value is boolean, always true if this header exists
             if (headers.containsKey(MessagePropertiesUtils.END_BATCH_POINTER)) {
                 future.complete(new IncomingBatchMessage<>(channel, incomingProperties,
@@ -78,6 +79,7 @@ public interface Outgoing extends Message {
             }
         };
         val ct = consumer.consume(channel, properties);
+        markRequestedResponse();
 
         return future.thenApply(it -> {
             channel.removeConsumer(ct);

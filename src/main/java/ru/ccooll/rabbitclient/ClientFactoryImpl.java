@@ -19,7 +19,7 @@ public class ClientFactoryImpl implements ClientFactory {
     private ConnectionFactory connectionFactory = new ConnectionFactory();
     private Serializer serializer = new SimpleSerializer();
     private Deserializer deserializer = new SimpleDeserializer();
-    private ErrorHandler errorHandler = (ex) -> { throw new RuntimeException(ex); };
+    private ErrorHandler errorHandler = (ex) -> { throw new IllegalStateException(ex); };
 
     @Override
     public ClientFactory setConnectionFactory(@NotNull ConnectionFactory connectionFactory) {
