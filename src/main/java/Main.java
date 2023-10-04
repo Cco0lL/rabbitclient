@@ -3,21 +3,22 @@ import com.rabbitmq.client.ConnectionFactory;
 import lombok.val;
 import ru.ccooll.rabbitclient.Client;
 import ru.ccooll.rabbitclient.ClientFactory;
+import ru.ccooll.rabbitclient.connect.AutoReconnectStrategy;
 import ru.ccooll.rabbitclient.message.incoming.IncomingMessage;
-import ru.ccooll.rabbitclient.util.MessagePropertiesUtils;
 import ru.ccooll.rabbitclient.util.RoutingData;
 
-import javax.print.DocFlavor;
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeoutException;
 
 public class Main {
 
     public static void main(String[] args) {
+        //testDefaultClient();
+        testImpl();
+    }
+
+    private static void testDefaultClient() {
         ConnectionFactory factory = new ConnectionFactory() {
             {
                 setUsername("guest");
@@ -41,7 +42,7 @@ public class Main {
                         countDownLatch.countDown();
                     });
 
-           channel.addConsumer("test", true, ((s, delivery) -> {
+            channel.addConsumer("test", true, ((s, delivery) -> {
                 val errorHandler = channel.errorHandler();
                 val properties = delivery.getProperties();
                 val deserialized = errorHandler.computeSafe(() ->
@@ -59,5 +60,36 @@ public class Main {
         } catch (Throwable th) {
             throw new IllegalStateException(th);
         }
+    }
+
+    private static void testImpl() {
+        ConnectionFactory factory = new ConnectionFactory() {
+            {
+                setUsername("guest");
+                setPassword("guest");
+                setHost("localhost");
+                setPort(5672);
+            }
+        };
+        ClientFactory cf = ClientFactory.newInstance()
+                .setConnectionFactory(factory);
+
+        val connectionStrategy = new AutoReconnectStrategy();
+        Client client = null;
+        try {
+            client = connectionStrategy.connect("test", cf, Executors.newFixedThreadPool(10,
+                    new ThreadFactoryBuilder().setNameFormat("client-worker-%d").build()));
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        if (client != null) {
+            System.out.println("Successful connect");
+            try {
+                client.close();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+
     }
 }

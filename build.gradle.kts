@@ -16,6 +16,10 @@ repositories {
 }
 
 dependencies {
+    // configs
+    // https://mvnrepository.com/artifact/com.typesafe/config
+    implementation("com.typesafe:config:1.4.2")
+
     //syntax helpful libs
     compileOnly("org.projectlombok:lombok:1.18.26")
     annotationProcessor("org.projectlombok:lombok:1.18.26")
