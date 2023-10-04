@@ -18,7 +18,17 @@ repositories {
 dependencies {
     // configs
     // https://mvnrepository.com/artifact/com.typesafe/config
-    implementation("com.typesafe:config:1.4.2")
+    compileOnly("com.typesafe:config:1.4.2")
+
+    //jakson
+    // https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind
+    compileOnly("com.fasterxml.jackson.core:jackson-databind:2.14.1")
+    // https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-core
+    compileOnly("com.fasterxml.jackson.core:jackson-core:2.14.1")
+    // https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-annotations
+    compileOnly("com.fasterxml.jackson.core:jackson-annotations:2.14.1")
+    // https://mvnrepository.com/artifact/com.fasterxml.jackson.module/jackson-module-parameter-names
+    compileOnly("com.fasterxml.jackson.module:jackson-module-parameter-names:2.14.1")
 
     //syntax helpful libs
     compileOnly("org.projectlombok:lombok:1.18.26")
