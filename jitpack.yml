@@ -1,2 +1,5 @@
 jdk:
   - openjdk19
+before_install:
+  - sdk install java 19.0.1-ms
+  - sdk use java 19.0.1-ms
