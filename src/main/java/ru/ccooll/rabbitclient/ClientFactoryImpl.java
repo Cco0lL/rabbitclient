@@ -8,6 +8,7 @@ import ru.ccooll.rabbitclient.common.Deserializer;
 import ru.ccooll.rabbitclient.common.Serializer;
 import ru.ccooll.rabbitclient.common.SimpleDeserializer;
 import ru.ccooll.rabbitclient.common.SimpleSerializer;
+import ru.ccooll.rabbitclient.connect.ClientConnectionStrategy;
 import ru.ccooll.rabbitclient.error.ErrorHandler;
 
 import java.io.IOException;
@@ -20,6 +21,7 @@ public class ClientFactoryImpl implements ClientFactory {
     private Serializer serializer = new SimpleSerializer();
     private Deserializer deserializer = new SimpleDeserializer();
     private ErrorHandler errorHandler = (ex) -> { throw new IllegalStateException(ex); };
+    private ClientConnectionStrategy clientConnectionStrategy;
 
     @Override
     public ClientFactory setConnectionFactory(@NotNull ConnectionFactory connectionFactory) {
@@ -50,10 +52,23 @@ public class ClientFactoryImpl implements ClientFactory {
     }
 
     @Override
+    public ClientFactory setClientConnectionStrategy(
+            @NotNull ClientConnectionStrategy clientConnectionStrategy) {
+        Preconditions.checkNotNull(clientConnectionStrategy, "client connection is null");
+        this.clientConnectionStrategy = clientConnectionStrategy;
+        return this;
+    }
+
+    @Override
     public Client createNewAndConnect(@NotNull String name, @NotNull ExecutorService clientWorker) throws IOException, TimeoutException {
         Preconditions.checkNotNull(name, "name is null");
         Preconditions.checkNotNull(clientWorker, "client worker is null");
-        val connection = connectionFactory.newConnection(clientWorker, name);
-        return new ClientImpl(connectionFactory, clientWorker, serializer, deserializer, errorHandler, connection);
+
+        if (clientConnectionStrategy != null) {
+            return errorHandler.computeSafe(() -> clientConnectionStrategy.connect(name, this, clientWorker));
+        } else {
+            val connection = connectionFactory.newConnection(clientWorker, name);
+            return new ClientImpl(connectionFactory, clientWorker, serializer, deserializer, errorHandler, connection);
+        }
     }
 }

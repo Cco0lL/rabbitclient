@@ -5,6 +5,8 @@ import ru.ccooll.rabbitclient.Client;
 import ru.ccooll.rabbitclient.ClientFactory;
 import ru.ccooll.rabbitclient.connect.AutoReconnectStrategy;
 import ru.ccooll.rabbitclient.message.incoming.IncomingMessage;
+import ru.ccooll.rabbitclient.message.properties.MutableMessageProperties;
+import ru.ccooll.rabbitclient.message.properties.type.MessageTypeProperties;
 import ru.ccooll.rabbitclient.util.RoutingData;
 
 import java.util.ArrayList;
@@ -14,15 +16,15 @@ import java.util.concurrent.Executors;
 public class Main {
 
     public static void main(String[] args) {
-        //testDefaultClient();
-        testImpl();
+        testDefaultClient();
+        //testImpl();
     }
 
     private static void testDefaultClient() {
         ConnectionFactory factory = new ConnectionFactory() {
             {
-                setUsername("guest");
-                setPassword("guest");
+                setUsername("satarand");
+                setPassword("somefortest");
                 setHost("localhost");
                 setPort(5672);
             }
@@ -34,7 +36,10 @@ public class Main {
                 new ThreadFactoryBuilder().setNameFormat("client-worker-%d").build()))) {
             val countDownLatch = new CountDownLatch(1);
             val channel = client.createChannel();
-            val message = channel.prepareAndSend(RoutingData.of("test"), "Hello");
+
+            val message = channel.convertAndSend(RoutingData.of("test"), "Hello",
+                    new MutableMessageProperties().messageTypeProperties(MessageTypeProperties.BINARY));
+
             message.responseRequestBatch(Integer.class)
                     .thenAccept((it) -> {
                         val list = it.message();
@@ -53,7 +58,8 @@ public class Main {
                 for (int i = 0; i < 100; i++) {
                     intList.add(i + 1);
                 }
-                incoming.sendResponseBatch(intList);
+                incoming.sendResponseBatch(intList,
+                        new MutableMessageProperties().messageTypeProperties(MessageTypeProperties.BINARY));
             }));
 
             countDownLatch.await();

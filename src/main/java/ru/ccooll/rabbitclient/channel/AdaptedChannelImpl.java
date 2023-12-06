@@ -1,21 +1,23 @@
 package ru.ccooll.rabbitclient.channel;
 
-import com.rabbitmq.client.*;
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.BuiltinExchangeType;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Delivery;
 import lombok.val;
 import org.jetbrains.annotations.Nullable;
-import ru.ccooll.rabbitclient.util.RoutingData;
 import ru.ccooll.rabbitclient.common.Deserializer;
 import ru.ccooll.rabbitclient.common.Serializer;
 import ru.ccooll.rabbitclient.error.ErrorHandler;
 import ru.ccooll.rabbitclient.message.outgoing.OutgoingBatchMessage;
 import ru.ccooll.rabbitclient.message.outgoing.OutgoingMessage;
+import ru.ccooll.rabbitclient.message.properties.MutableMessageProperties;
 import ru.ccooll.rabbitclient.util.MessagePropertiesUtils;
+import ru.ccooll.rabbitclient.util.RoutingData;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.function.BiConsumer;
 
 public record AdaptedChannelImpl(Channel channel, Serializer serializer, Deserializer deserializer,
@@ -87,41 +89,33 @@ public record AdaptedChannelImpl(Channel channel, Serializer serializer, Deseria
     }
 
     @Override
-    public OutgoingMessage convertAndSend(RoutingData routingData, Object message, AMQP.BasicProperties properties) {
+    public OutgoingMessage convertAndSend(RoutingData routingData, Object message, MutableMessageProperties properties) {
         return errorHandler.computeSafe(() -> {
             byte[] body = serializer.serialize(message);
-            channel.basicPublish(routingData.exchange(), routingData.routingKey(), properties, body);
-            return new OutgoingMessage(this, properties);
+            AMQP.BasicProperties immutable = properties.toImmutableProperties();
+            channel.basicPublish(routingData.exchange(), routingData.routingKey(), immutable, body);
+            return new OutgoingMessage(this, immutable);
         });
     }
 
     @Override
-    public OutgoingMessage prepareAndSend(RoutingData routingData, Object message) {
-        return convertAndSend(routingData, message, MessagePropertiesUtils.create(UUID.randomUUID()));
-    }
-
-    @Override
     public OutgoingBatchMessage convertAndSend(RoutingData routingData, List<Object> messages,
-                                               AMQP.BasicProperties properties) {
-        val iterator = messages.iterator();
-        while (iterator.hasNext()) {
-            val message = iterator.next();
-            //last message in batch defines batch properties
-            val messageProperties = iterator.hasNext() ? MessagePropertiesUtils.createWithCorrelationId(properties.getCorrelationId())
-                    : properties;
-            convertAndSend(routingData, message, messageProperties);
+                                               MutableMessageProperties properties) {
+        if (messages.isEmpty()) {
+            return OutgoingBatchMessage.EMPTY;
         }
 
-        return new OutgoingBatchMessage(this, properties);
-    }
+        val iterator = messages.iterator();
+        AMQP.BasicProperties lastProperties = null;
+        while (iterator.hasNext()) {
+            val message = iterator.next();
+            if (!iterator.hasNext()) {
+                properties.headers().put(MessagePropertiesUtils.END_BATCH_POINTER, true);
+            }
+            lastProperties = convertAndSend(routingData, message, properties).properties();
+        }
 
-    @Override
-    public OutgoingBatchMessage prepareAndSend(RoutingData routingData, List<Object> messages) {
-        val headers = new HashMap<String, Object>();
-        headers.put(MessagePropertiesUtils.END_BATCH_POINTER, true);
-        val properties = MessagePropertiesUtils.create(UUID.randomUUID().toString(),
-                MessagePropertiesUtils.generateReplyToKey(), headers);
-        return convertAndSend(routingData, messages, properties);
+        return new OutgoingBatchMessage(this, lastProperties);
     }
 
     @Override

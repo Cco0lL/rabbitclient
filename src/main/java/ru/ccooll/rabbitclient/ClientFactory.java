@@ -4,6 +4,7 @@ import com.rabbitmq.client.ConnectionFactory;
 import org.jetbrains.annotations.NotNull;
 import ru.ccooll.rabbitclient.common.Deserializer;
 import ru.ccooll.rabbitclient.common.Serializer;
+import ru.ccooll.rabbitclient.connect.ClientConnectionStrategy;
 import ru.ccooll.rabbitclient.error.ErrorHandler;
 
 import java.io.IOException;
@@ -50,6 +51,11 @@ public interface ClientFactory {
      * @return this
      */
     ClientFactory setDefaultErrorHandler(@NotNull ErrorHandler handler);
+
+    /**
+     * sets client connection strategy
+     */
+    ClientFactory setClientConnectionStrategy(@NotNull ClientConnectionStrategy clientConnectionStrategy);
 
     /**
      * creates and connects new rabbit client

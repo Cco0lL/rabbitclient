@@ -1,15 +1,15 @@
 package ru.ccooll.rabbitclient.channel;
 
-import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.BuiltinExchangeType;
 import com.rabbitmq.client.Delivery;
 import org.jetbrains.annotations.Nullable;
-import ru.ccooll.rabbitclient.util.RoutingData;
 import ru.ccooll.rabbitclient.common.Deserializer;
 import ru.ccooll.rabbitclient.common.Serializer;
 import ru.ccooll.rabbitclient.error.ErrorHandler;
 import ru.ccooll.rabbitclient.message.outgoing.OutgoingBatchMessage;
 import ru.ccooll.rabbitclient.message.outgoing.OutgoingMessage;
+import ru.ccooll.rabbitclient.message.properties.MutableMessageProperties;
+import ru.ccooll.rabbitclient.util.RoutingData;
 
 import java.util.List;
 import java.util.Map;
@@ -126,17 +126,8 @@ public interface AdaptedChannel {
      * @param properties  - properties of message
      * @return - outgoing data that able to request a response
      */
-    OutgoingMessage convertAndSend(RoutingData routingData, Object message, AMQP.BasicProperties properties);
-
-    /**
-     * prepares and sends a message and returns an object
-     * that able to request a response
-     *
-     * @param routingData - routing data
-     * @param message     - message object that will convert to raw bytes
-     * @return - outgoing data that able to request a response
-     */
-    OutgoingMessage prepareAndSend(RoutingData routingData, Object message);
+    OutgoingMessage convertAndSend(RoutingData routingData, Object message,
+                                   MutableMessageProperties properties);
 
     /**
      * converts and sends a batch of messages and returns an
@@ -148,17 +139,7 @@ public interface AdaptedChannel {
      * @return - outgoing batch data that able to request a response
      */
     OutgoingBatchMessage convertAndSend(RoutingData routingData, List<Object> messages,
-                                        AMQP.BasicProperties properties);
-
-    /**
-     * prepares and sends a batch of messages and returns an
-     * object that able to request a response
-     *
-     * @param routingData - routing data
-     * @param messages    - messages that will convert to raw bytes;
-     * @return - outgoing batch data that able to request a response
-     */
-    OutgoingBatchMessage prepareAndSend(RoutingData routingData, List<Object> messages);
+                                        MutableMessageProperties properties);
 
     /**
      * adds consumer

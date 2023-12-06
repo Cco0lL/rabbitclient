@@ -1,20 +1,19 @@
 package ru.ccooll.rabbitclient.message.incoming;
 
-import com.rabbitmq.client.AMQP;
 import lombok.val;
-import ru.ccooll.rabbitclient.util.RoutingData;
 import ru.ccooll.rabbitclient.message.Message;
 import ru.ccooll.rabbitclient.message.outgoing.OutgoingBatchMessage;
 import ru.ccooll.rabbitclient.message.outgoing.OutgoingMessage;
-import ru.ccooll.rabbitclient.util.MessagePropertiesUtils;
+import ru.ccooll.rabbitclient.message.properties.MutableMessageProperties;
+import ru.ccooll.rabbitclient.message.properties.reply.ReplyToConstantNameStrategy;
+import ru.ccooll.rabbitclient.util.RoutingData;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.UUID;
 
 /**
  * represents incoming message interface that able to
  * send response to sender
+ *
  * @param <T> - message object type
  */
 public interface Incoming<T> extends Message {
@@ -25,7 +24,7 @@ public interface Incoming<T> extends Message {
 
     boolean isAlreadyResponded();
 
-    default <R> OutgoingMessage sendResponse(R response) {
+    default <R> OutgoingMessage sendResponse(R response, MutableMessageProperties responseProperties) {
         if (isAlreadyResponded()) {
             throw new IllegalStateException("Already responded");
         }
@@ -33,14 +32,14 @@ public interface Incoming<T> extends Message {
         val properties = properties();
         val channel = channel();
         val routingData = RoutingData.of(properties.getReplyTo());
-        val responseProperties = MessagePropertiesUtils.createWithCorrelationId(properties.getCorrelationId());
 
-        val outgoing = channel.convertAndSend(routingData, response, responseProperties);
+        val outgoing = channel.convertAndSend(routingData, response, responseProperties
+                .correlationId(properties.getCorrelationId()));
         markAsResponded();
         return outgoing;
     }
 
-    default <R> OutgoingBatchMessage sendResponseBatch(List<R> response) {
+    default <R> OutgoingBatchMessage sendResponseBatch(List<R> response, MutableMessageProperties responseProperties) {
         if (isAlreadyResponded()) {
             throw new IllegalStateException("Already responded");
         }
@@ -49,14 +48,12 @@ public interface Incoming<T> extends Message {
         val channel = channel();
         val routingData = RoutingData.of(properties.getReplyTo());
 
-        val headers = new HashMap<String, Object>();
-        headers.put(MessagePropertiesUtils.END_BATCH_POINTER, true);
-
-        val responseProperties = MessagePropertiesUtils.create(properties.getCorrelationId(),
-                MessagePropertiesUtils.generateReplyToKey(), headers);
-
         //noinspection unchecked
-        val outgoing = channel.convertAndSend(routingData, (List<Object>) response, responseProperties);
+        val outgoing = channel.convertAndSend(routingData, (List<Object>) response,
+                responseProperties
+                        .replyToNameStrategy(new ReplyToConstantNameStrategy(responseProperties.replyToNameStrategy()))
+                        .correlationId(properties.getCorrelationId()));
+
         markAsResponded();
         return outgoing;
     }
