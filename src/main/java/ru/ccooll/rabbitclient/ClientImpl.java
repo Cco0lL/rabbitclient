@@ -11,6 +11,8 @@ import ru.ccooll.rabbitclient.error.ErrorHandler;
 import java.util.concurrent.ExecutorService;
 
 
+//TODO: придумать как сделать крутую фабрику для пропертис с разным контентом, (application/octet-stream,
+// text/plain, application/json и с delivery mode (1 - default, 2 - persists)
 public record ClientImpl(ConnectionFactory connectionFactory, ExecutorService clientWorker,
                          Serializer defaultSerializer, Deserializer defaultDeserializer,
                          ErrorHandler errorHandler, Connection connection) implements Client {
