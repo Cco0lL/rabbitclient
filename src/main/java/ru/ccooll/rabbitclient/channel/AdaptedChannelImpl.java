@@ -14,6 +14,7 @@ import ru.ccooll.rabbitclient.util.MessagePropertiesUtils;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.function.BiConsumer;
 
@@ -26,9 +27,24 @@ public record AdaptedChannelImpl(Channel channel, Serializer serializer, Deseria
     }
 
     @Override
+    public void declareExchange(String exchangeKey, BuiltinExchangeType type,
+                                boolean durable, boolean autoDelete, boolean internal,
+                                Map<String, Object> arguments) {
+        errorHandler.computeSafe(() -> channel.exchangeDeclare(exchangeKey, type,
+                durable, autoDelete, internal, arguments));
+    }
+
+    @Override
     public void declareQueue(String queueKey, boolean autoDelete) {
         errorHandler.computeSafe(() ->
                 channel.queueDeclare(queueKey, false, false, autoDelete, null));
+    }
+
+    @Override
+    public void declareQueue(String queueKey, boolean durable, boolean exclusive,
+                             boolean autoDelete, Map<String, Object> arguments) {
+        errorHandler.computeSafe(() -> channel.queueDeclare(queueKey, durable,
+                exclusive, autoDelete, arguments));
     }
 
     @Override

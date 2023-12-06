@@ -12,6 +12,7 @@ import ru.ccooll.rabbitclient.message.outgoing.OutgoingBatchMessage;
 import ru.ccooll.rabbitclient.message.outgoing.OutgoingMessage;
 
 import java.util.List;
+import java.util.Map;
 import java.util.function.BiConsumer;
 
 /**
@@ -30,14 +31,33 @@ public interface AdaptedChannel {
     void declareExchange(String exchangeKey, BuiltinExchangeType type);
 
     /**
+     * provides a way to declare an exchange with any params and arguments
+     * <p>
+     * @see com.rabbitmq.client.Channel#exchangeDeclare(String, BuiltinExchangeType, boolean, boolean, boolean, Map)
+     * for more info
+     */
+    void declareExchange(String exchangeKey, BuiltinExchangeType type,
+                         boolean durable, boolean autoDelete, boolean internal,
+                         Map<String, Object> arguments);
+
+    /**
      * declares a queue, throws IOException that handles by errors handler
-     * if queue routing key length longer than 255 symbols, or channel already closed,
+     * if queue routing key length is longer than 255 symbols, or channel is already closed,
      * or request of declare has expired
      *
      * @param queueKey - routing key of queue
      * @param autoDelete - true if channel should delete when queue no longer in use
      */
     void declareQueue(String queueKey, boolean autoDelete);
+
+    /**
+     * provides a way to declare a queue with any params and arguments
+     * <p>
+     * @see com.rabbitmq.client.Channel#queueDeclare(String, boolean, boolean, boolean, Map) for
+     * more info
+     */
+    void declareQueue(String queueKey, boolean durable, boolean exclusive,
+                      boolean autoDelete, Map<String, Object> arguments);
 
     /**
      * removes an exchange, throws IOException that handles by errors handler
