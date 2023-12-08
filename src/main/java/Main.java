@@ -21,6 +21,8 @@ public class Main {
     }
 
     private static void testDefaultClient() {
+
+
         ConnectionFactory factory = new ConnectionFactory() {
             {
                 setUsername("satarand");
@@ -51,7 +53,7 @@ public class Main {
                 val errorHandler = channel.errorHandler();
                 val properties = delivery.getProperties();
                 val deserialized = errorHandler.computeSafe(() ->
-                        channel.deserializer().deserialize(delivery.getBody(), String.class));
+                        channel.converter().convertFromBytes(delivery.getBody(), String.class));
                 System.out.println(deserialized);
                 val incoming = new IncomingMessage<>(channel, properties, deserialized);
                 val intList = new ArrayList<Integer>();

@@ -3,8 +3,7 @@ package ru.ccooll.rabbitclient.channel;
 import com.rabbitmq.client.BuiltinExchangeType;
 import com.rabbitmq.client.Delivery;
 import org.jetbrains.annotations.Nullable;
-import ru.ccooll.rabbitclient.common.Deserializer;
-import ru.ccooll.rabbitclient.common.Serializer;
+import ru.ccooll.rabbitclient.common.Converter;
 import ru.ccooll.rabbitclient.error.ErrorHandler;
 import ru.ccooll.rabbitclient.message.outgoing.OutgoingBatchMessage;
 import ru.ccooll.rabbitclient.message.outgoing.OutgoingMessage;
@@ -167,9 +166,7 @@ public interface AdaptedChannel {
      */
     void ack(long deliveryTag, boolean multiple);
 
-    Deserializer deserializer();
-
-    Serializer serializer();
+    Converter converter();
 
     ErrorHandler errorHandler();
 

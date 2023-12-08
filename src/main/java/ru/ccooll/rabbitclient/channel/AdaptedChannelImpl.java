@@ -6,8 +6,7 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Delivery;
 import lombok.val;
 import org.jetbrains.annotations.Nullable;
-import ru.ccooll.rabbitclient.common.Deserializer;
-import ru.ccooll.rabbitclient.common.Serializer;
+import ru.ccooll.rabbitclient.common.Converter;
 import ru.ccooll.rabbitclient.error.ErrorHandler;
 import ru.ccooll.rabbitclient.message.outgoing.OutgoingBatchMessage;
 import ru.ccooll.rabbitclient.message.outgoing.OutgoingMessage;
@@ -20,7 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
-public record AdaptedChannelImpl(Channel channel, Serializer serializer, Deserializer deserializer,
+public record AdaptedChannelImpl(Channel channel, Converter converter,
                                  ErrorHandler errorHandler) implements AdaptedChannel {
 
     @Override
@@ -91,7 +90,7 @@ public record AdaptedChannelImpl(Channel channel, Serializer serializer, Deseria
     @Override
     public OutgoingMessage convertAndSend(RoutingData routingData, Object message, MutableMessageProperties properties) {
         return errorHandler.computeSafe(() -> {
-            byte[] body = serializer.serialize(message);
+            byte[] body = converter.convertToBytes(message);
             AMQP.BasicProperties immutable = properties.toImmutableProperties();
             channel.basicPublish(routingData.exchange(), routingData.routingKey(), immutable, body);
             return new OutgoingMessage(this, immutable);
@@ -139,5 +138,4 @@ public record AdaptedChannelImpl(Channel channel, Serializer serializer, Deseria
     public void close() {
         errorHandler.computeSafe(() -> channel.close());
     }
-
 }

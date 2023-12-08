@@ -1,4 +1,6 @@
-package ru.ccooll.rabbitclient.common;
+package ru.ccooll.rabbitclient.common.simple;
+
+import ru.ccooll.rabbitclient.common.Deserializer;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;

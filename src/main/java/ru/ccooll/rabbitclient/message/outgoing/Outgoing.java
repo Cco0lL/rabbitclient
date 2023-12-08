@@ -36,8 +36,8 @@ public interface Outgoing extends Message {
         channel.declareQueue(properties.getReplyTo(), true);
         CallbackConsumer consumer = (deliveryTag, incomingProperties, body) -> {
             val errorHandler = channel.errorHandler();
-            val deserializer = channel.deserializer();
-            val message = errorHandler.computeSafe(() -> deserializer.deserialize(body, rClass));
+            val converter = channel.converter();
+            val message = errorHandler.computeSafe(() -> converter.convertFromBytes(body, rClass));
             future.complete(new IncomingMessage<>(channel, incomingProperties, message));
             channel.ack(deliveryTag, false);
         };
@@ -65,8 +65,8 @@ public interface Outgoing extends Message {
         channel.declareQueue(properties.getReplyTo(), true);
         CallbackConsumer consumer = (deliveryTag, incomingProperties, body) -> {
             val errorHandler = channel.errorHandler();
-            val deserializer = channel.deserializer();
-            val message = errorHandler.computeSafe(() -> deserializer.deserialize(body, rClass));
+            val converter = channel.converter();
+            val message = errorHandler.computeSafe(() -> converter.convertFromBytes(body, rClass));
             messages.add(message);
 
             val headers = incomingProperties.getHeaders();

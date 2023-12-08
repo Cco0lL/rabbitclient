@@ -1,6 +1,8 @@
 package ru.ccooll.rabbitclient;
 
 import ru.ccooll.rabbitclient.channel.AdaptedChannel;
+import ru.ccooll.rabbitclient.common.Converter;
+import ru.ccooll.rabbitclient.error.ErrorHandler;
 
 /**
  * represents client interface. client has only one connection
@@ -10,9 +12,12 @@ public interface Client extends AutoCloseable {
 
     /**
      * creates channel with default serializers
-     * @return this
      */
     AdaptedChannel createChannel();
+
+    Converter converter();
+
+    ErrorHandler errorHandler();
 }
 
 

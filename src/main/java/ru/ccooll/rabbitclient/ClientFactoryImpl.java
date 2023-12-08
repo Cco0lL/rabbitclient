@@ -4,10 +4,8 @@ import com.google.common.base.Preconditions;
 import com.rabbitmq.client.ConnectionFactory;
 import lombok.val;
 import org.jetbrains.annotations.NotNull;
-import ru.ccooll.rabbitclient.common.Deserializer;
-import ru.ccooll.rabbitclient.common.Serializer;
-import ru.ccooll.rabbitclient.common.SimpleDeserializer;
-import ru.ccooll.rabbitclient.common.SimpleSerializer;
+import ru.ccooll.rabbitclient.common.Converter;
+import ru.ccooll.rabbitclient.common.simple.SimpleConverter;
 import ru.ccooll.rabbitclient.connect.ClientConnectionStrategy;
 import ru.ccooll.rabbitclient.error.ErrorHandler;
 
@@ -18,9 +16,10 @@ import java.util.concurrent.TimeoutException;
 public class ClientFactoryImpl implements ClientFactory {
 
     private ConnectionFactory connectionFactory = new ConnectionFactory();
-    private Serializer serializer = new SimpleSerializer();
-    private Deserializer deserializer = new SimpleDeserializer();
-    private ErrorHandler errorHandler = (ex) -> { throw new IllegalStateException(ex); };
+    private Converter converter = new SimpleConverter();
+    private ErrorHandler errorHandler = (ex) -> {
+        throw new IllegalStateException(ex);
+    };
     private ClientConnectionStrategy clientConnectionStrategy;
 
     @Override
@@ -31,16 +30,9 @@ public class ClientFactoryImpl implements ClientFactory {
     }
 
     @Override
-    public ClientFactory setDefaultSerializer(@NotNull Serializer serializer) {
-        Preconditions.checkNotNull(serializer, "serializer is null");
-        this.serializer = serializer;
-        return this;
-    }
-
-    @Override
-    public ClientFactory setDefaultDeserializer(@NotNull Deserializer deserializer) {
-        Preconditions.checkNotNull(deserializer, "deserializer is null");
-        this.deserializer = deserializer;
+    public ClientFactory setDefaultConverter(@NotNull Converter converter) {
+        Preconditions.checkNotNull(converter);
+        this.converter = converter;
         return this;
     }
 
@@ -68,7 +60,7 @@ public class ClientFactoryImpl implements ClientFactory {
             return errorHandler.computeSafe(() -> clientConnectionStrategy.connect(name, this, clientWorker));
         } else {
             val connection = connectionFactory.newConnection(clientWorker, name);
-            return new ClientImpl(connectionFactory, clientWorker, serializer, deserializer, errorHandler, connection);
+            return new ClientImpl(connection, clientWorker, converter, errorHandler);
         }
     }
 }
