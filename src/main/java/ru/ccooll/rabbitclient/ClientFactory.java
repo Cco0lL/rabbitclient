@@ -3,7 +3,6 @@ package ru.ccooll.rabbitclient;
 import com.rabbitmq.client.ConnectionFactory;
 import org.jetbrains.annotations.NotNull;
 import ru.ccooll.rabbitclient.common.Converter;
-import ru.ccooll.rabbitclient.connect.ClientConnectionStrategy;
 import ru.ccooll.rabbitclient.error.ErrorHandler;
 
 import java.io.IOException;
@@ -46,12 +45,7 @@ public interface ClientFactory {
     ClientFactory setDefaultErrorHandler(@NotNull ErrorHandler handler);
 
     /**
-     * sets client connection strategy
-     */
-    ClientFactory setClientConnectionStrategy(@NotNull ClientConnectionStrategy clientConnectionStrategy);
-
-    /**
-     * creates and connects new rabbit client
+     * creates new rabbit client
      *
      * @param name         - client name
      * @param clientWorker - executor service for consumers on this client
@@ -59,6 +53,5 @@ public interface ClientFactory {
      * @throws IOException      - an error occurred
      * @throws TimeoutException - time out on rabbit-mq connection
      */
-    Client createNewAndConnect(@NotNull String name, @NotNull ExecutorService clientWorker)
-            throws IOException, TimeoutException;
+    Client createNew(@NotNull String name, @NotNull ExecutorService clientWorker);
 }

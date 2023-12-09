@@ -1,9 +1,7 @@
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.rabbitmq.client.ConnectionFactory;
 import lombok.val;
-import ru.ccooll.rabbitclient.Client;
 import ru.ccooll.rabbitclient.ClientFactory;
-import ru.ccooll.rabbitclient.connect.AutoReconnectStrategy;
 import ru.ccooll.rabbitclient.message.incoming.IncomingMessage;
 import ru.ccooll.rabbitclient.message.properties.MutableMessageProperties;
 import ru.ccooll.rabbitclient.message.properties.type.MessageTypeProperties;
@@ -34,8 +32,9 @@ public class Main {
 
         ClientFactory cf = ClientFactory.newInstance()
                 .setConnectionFactory(factory);
-        try (val client = cf.createNewAndConnect("test", Executors.newFixedThreadPool(10,
+        try (val client = cf.createNew("test", Executors.newFixedThreadPool(10,
                 new ThreadFactoryBuilder().setNameFormat("client-worker-%d").build()))) {
+            client.connect();
             val countDownLatch = new CountDownLatch(1);
             val channel = client.createChannel();
 
@@ -68,36 +67,5 @@ public class Main {
         } catch (Throwable th) {
             throw new IllegalStateException(th);
         }
-    }
-
-    private static void testImpl() {
-        ConnectionFactory factory = new ConnectionFactory() {
-            {
-                setUsername("guest");
-                setPassword("guest");
-                setHost("localhost");
-                setPort(5672);
-            }
-        };
-        ClientFactory cf = ClientFactory.newInstance()
-                .setConnectionFactory(factory);
-
-        val connectionStrategy = new AutoReconnectStrategy();
-        Client client = null;
-        try {
-            client = connectionStrategy.connect("test", cf, Executors.newFixedThreadPool(10,
-                    new ThreadFactoryBuilder().setNameFormat("client-worker-%d").build()));
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
-        if (client != null) {
-            System.out.println("Successful connect");
-            try {
-                client.close();
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
-
     }
 }
