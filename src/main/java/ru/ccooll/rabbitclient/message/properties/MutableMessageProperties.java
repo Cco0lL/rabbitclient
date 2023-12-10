@@ -27,7 +27,7 @@ public class MutableMessageProperties {
 
     public AMQP.BasicProperties toImmutableProperties() {
         return new AMQP.BasicProperties.Builder()
-                .type(messageTypeProperties.contentType())
+                .contentType(messageTypeProperties.contentType())
                 .deliveryMode(messageTypeProperties.deliveryMode().getNum())
                 .correlationId(correlationId)
                 .replyTo(replyToNameStrategy.create())

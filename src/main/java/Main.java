@@ -3,8 +3,6 @@ import com.rabbitmq.client.ConnectionFactory;
 import lombok.val;
 import ru.ccooll.rabbitclient.ClientFactory;
 import ru.ccooll.rabbitclient.message.incoming.IncomingMessage;
-import ru.ccooll.rabbitclient.message.properties.MutableMessageProperties;
-import ru.ccooll.rabbitclient.message.properties.type.MessageTypeProperties;
 import ru.ccooll.rabbitclient.util.RoutingData;
 
 import java.util.ArrayList;
@@ -19,12 +17,10 @@ public class Main {
     }
 
     private static void testDefaultClient() {
-
-
         ConnectionFactory factory = new ConnectionFactory() {
             {
-                setUsername("satarand");
-                setPassword("somefortest");
+                setUsername("kul");
+                setPassword("verycool");
                 setHost("localhost");
                 setPort(5672);
             }
@@ -37,30 +33,28 @@ public class Main {
             client.connect();
             val countDownLatch = new CountDownLatch(1);
             val channel = client.createChannel();
-
-            val message = channel.convertAndSend(RoutingData.of("test"), "Hello",
-                    new MutableMessageProperties().messageTypeProperties(MessageTypeProperties.BINARY));
+            channel.declareQueue("test", true, false);
+            val message = channel.convertAndSend(RoutingData.of("test"), "Hello", true);
 
             message.responseRequestBatch(Integer.class)
                     .thenAccept((it) -> {
                         val list = it.message();
                         System.out.println(list.toString());
+                        System.out.println(it.properties().getContentType());
+                        System.out.println(it.properties().getDeliveryMode());
                         countDownLatch.countDown();
                     });
 
             channel.addConsumer("test", true, ((s, delivery) -> {
-                val errorHandler = channel.errorHandler();
                 val properties = delivery.getProperties();
-                val deserialized = errorHandler.computeSafe(() ->
-                        channel.converter().convertFromBytes(delivery.getBody(), String.class));
+                val deserialized = channel.converter().convert(delivery.getBody(), String.class);
                 System.out.println(deserialized);
                 val incoming = new IncomingMessage<>(channel, properties, deserialized);
                 val intList = new ArrayList<Integer>();
                 for (int i = 0; i < 100; i++) {
                     intList.add(i + 1);
                 }
-                incoming.sendResponseBatch(intList,
-                        new MutableMessageProperties().messageTypeProperties(MessageTypeProperties.BINARY));
+                incoming.sendResponseBatch(intList, true);
             }));
 
             countDownLatch.await();

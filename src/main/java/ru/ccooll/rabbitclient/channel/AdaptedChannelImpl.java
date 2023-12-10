@@ -1,6 +1,5 @@
 package ru.ccooll.rabbitclient.channel;
 
-import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.BuiltinExchangeType;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Delivery;
@@ -10,8 +9,6 @@ import ru.ccooll.rabbitclient.common.Converter;
 import ru.ccooll.rabbitclient.error.ErrorHandler;
 import ru.ccooll.rabbitclient.message.outgoing.OutgoingBatchMessage;
 import ru.ccooll.rabbitclient.message.outgoing.OutgoingMessage;
-import ru.ccooll.rabbitclient.message.properties.MutableMessageProperties;
-import ru.ccooll.rabbitclient.util.MessagePropertiesUtils;
 import ru.ccooll.rabbitclient.util.RoutingData;
 
 import java.io.IOException;
@@ -37,8 +34,12 @@ public record AdaptedChannelImpl(Channel channel, Converter converter,
 
     @Override
     public void declareQueue(String queueKey, boolean autoDelete) {
-        errorHandler.computeSafe(() ->
-                channel.queueDeclare(queueKey, false, false, autoDelete, null));
+        declareQueue(queueKey, false, false, autoDelete, null);
+    }
+
+    @Override
+    public void declareQueue(String queueKey, boolean durable, boolean autoDelete) {
+        declareQueue(queueKey, durable, false, autoDelete, null);
     }
 
     @Override
@@ -79,42 +80,38 @@ public record AdaptedChannelImpl(Channel channel, Converter converter,
     }
 
     @Override
-    public OutgoingMessage send(RoutingData routingData, byte[] body) {
+    public OutgoingMessage send(RoutingData routingData, OutgoingMessage message) {
         return errorHandler.computeSafe(() -> {
-            val properties = MessagePropertiesUtils.create();
-            channel.basicPublish(routingData.exchange(), routingData.routingKey(), properties, body);
-            return new OutgoingMessage(this, properties);
+            channel.basicPublish(routingData.exchange(), routingData.routingKey(), message.properties(), message.payload());
+            message.setSenderChannel(this);
+            return message;
         });
     }
 
     @Override
-    public OutgoingMessage convertAndSend(RoutingData routingData, Object message, MutableMessageProperties properties) {
-        return errorHandler.computeSafe(() -> {
-            byte[] body = converter.convertToBytes(message);
-            AMQP.BasicProperties immutable = properties.toImmutableProperties();
-            channel.basicPublish(routingData.exchange(), routingData.routingKey(), immutable, body);
-            return new OutgoingMessage(this, immutable);
-        });
+    public OutgoingMessage convertAndSend(RoutingData routingData, Object message, boolean persists) {
+        return send(routingData, converter.convert(message, persists));
     }
 
     @Override
-    public OutgoingBatchMessage convertAndSend(RoutingData routingData, List<Object> messages,
-                                               MutableMessageProperties properties) {
-        if (messages.isEmpty()) {
-            return OutgoingBatchMessage.EMPTY;
-        }
-
-        val iterator = messages.iterator();
-        AMQP.BasicProperties lastProperties = null;
+    public OutgoingBatchMessage send(RoutingData routingData, OutgoingBatchMessage outgoingBatchMessage) {
+        val iterator = outgoingBatchMessage.payloadList().iterator();
+        val properties = outgoingBatchMessage.properties();
         while (iterator.hasNext()) {
-            val message = iterator.next();
+            val frame = iterator.next();
             if (!iterator.hasNext()) {
-                properties.headers().put(MessagePropertiesUtils.END_BATCH_POINTER, true);
+                send(routingData, new OutgoingMessage(frame, outgoingBatchMessage.lastMessageProperties()));
+                break;
             }
-            lastProperties = convertAndSend(routingData, message, properties).properties();
+            send(routingData, new OutgoingMessage(frame, properties));
         }
+        outgoingBatchMessage.setSenderChannel(this);
+        return outgoingBatchMessage;
+    }
 
-        return new OutgoingBatchMessage(this, lastProperties);
+    @Override
+    public OutgoingBatchMessage convertAndSend(RoutingData routingData, List<Object> messages, boolean persists) {
+        return send(routingData, converter().convert(messages, persists));
     }
 
     @Override

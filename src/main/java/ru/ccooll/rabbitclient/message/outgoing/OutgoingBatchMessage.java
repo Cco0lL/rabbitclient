@@ -1,25 +1,23 @@
 package ru.ccooll.rabbitclient.message.outgoing;
 
 import com.rabbitmq.client.AMQP;
-import lombok.AccessLevel;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import lombok.experimental.Accessors;
-import lombok.experimental.FieldDefaults;
-import lombok.experimental.NonFinal;
-import ru.ccooll.rabbitclient.channel.AdaptedChannel;
 import ru.ccooll.rabbitclient.message.incoming.IncomingBatchMessage;
 import ru.ccooll.rabbitclient.message.incoming.IncomingMessage;
+import ru.ccooll.rabbitclient.message.properties.MutableMessageProperties;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-@RequiredArgsConstructor
 @Getter
 @Accessors(fluent = true)
-public class OutgoingBatchMessage implements Outgoing {
+public class OutgoingBatchMessage extends AbstractOutgoing {
 
-    public static final OutgoingBatchMessage EMPTY = new OutgoingBatchMessage(null, null) {
+    public static final String END_BATCH_POINTER = "batch-end-pointer";
+    private static final OutgoingBatchMessage EMPTY = new OutgoingBatchMessage(new ArrayList<>(),
+            new MutableMessageProperties()) {
         @Override
         public boolean isRequestedResponse() {
             return false;
@@ -41,17 +39,17 @@ public class OutgoingBatchMessage implements Outgoing {
         }
     };
 
-    AdaptedChannel channel;
-    AMQP.BasicProperties properties;
-    @NonFinal @Getter(AccessLevel.NONE) boolean isRequestedResponse = false;
+    private final List<byte[]> payloadList;
+    private final AMQP.BasicProperties lastMessageProperties;
 
-    @Override
-    public void markRequestedResponse() {
-        isRequestedResponse = true;
+    public OutgoingBatchMessage(List<byte[]> payloadList, MutableMessageProperties properties) {
+        super(properties.toImmutableProperties());
+        this.payloadList = payloadList;
+        properties.headers().put(END_BATCH_POINTER, true);
+        lastMessageProperties = properties.toImmutableProperties();
     }
 
-    @Override
-    public boolean isRequestedResponse() {
-        return isRequestedResponse;
+    public static OutgoingBatchMessage empty() {
+        return EMPTY;
     }
 }

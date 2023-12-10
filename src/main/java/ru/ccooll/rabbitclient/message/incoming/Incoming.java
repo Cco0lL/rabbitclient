@@ -24,6 +24,21 @@ public interface Incoming<T> extends Message {
 
     boolean isAlreadyResponded();
 
+    default <R> OutgoingMessage sendResponse(R response, boolean persists) {
+        if (isAlreadyResponded()) {
+            throw new IllegalStateException("Already responded");
+        }
+        val properties = properties();
+        val channel = channel();
+        val routingData = RoutingData.of(properties.getReplyTo());
+        val converter = channel.converter();
+        val message = converter.convert(response, converter.newDefaultProperties(persists)
+                .correlationId(properties().getCorrelationId()));
+        val outgoing = channel.send(routingData, message);
+        markAsResponded();
+        return outgoing;
+    }
+
     default <R> OutgoingMessage sendResponse(R response, MutableMessageProperties responseProperties) {
         if (isAlreadyResponded()) {
             throw new IllegalStateException("Already responded");
@@ -33,8 +48,30 @@ public interface Incoming<T> extends Message {
         val channel = channel();
         val routingData = RoutingData.of(properties.getReplyTo());
 
-        val outgoing = channel.convertAndSend(routingData, response, responseProperties
+        val converter = channel.converter();
+        val message = converter.convert(response, responseProperties
+                .correlationId(properties().getCorrelationId()));
+        val outgoing = channel.send(routingData, message);
+        markAsResponded();
+        return outgoing;
+    }
+
+    default <R> OutgoingBatchMessage sendResponseBatch(List<R> response, boolean persists) {
+        if (isAlreadyResponded()) {
+            throw new IllegalStateException("Already responded");
+        }
+
+        val properties = properties();
+        val channel = channel();
+        val routingData = RoutingData.of(properties.getReplyTo());
+
+        val converter = channel.converter();
+        val responseProperties = converter.newDefaultProperties(persists);
+        //noinspection unchecked
+        val messageBatch = converter.convert((List<Object>) response, responseProperties
+                .replyToNameStrategy(new ReplyToConstantNameStrategy(responseProperties.replyToNameStrategy()))
                 .correlationId(properties.getCorrelationId()));
+        val outgoing = channel.send(routingData, messageBatch);
         markAsResponded();
         return outgoing;
     }
@@ -48,12 +85,12 @@ public interface Incoming<T> extends Message {
         val channel = channel();
         val routingData = RoutingData.of(properties.getReplyTo());
 
+        val converter = channel.converter();
         //noinspection unchecked
-        val outgoing = channel.convertAndSend(routingData, (List<Object>) response,
-                responseProperties
-                        .replyToNameStrategy(new ReplyToConstantNameStrategy(responseProperties.replyToNameStrategy()))
-                        .correlationId(properties.getCorrelationId()));
-
+        val messageBatch = converter.convert((List<Object>) response, responseProperties
+                .replyToNameStrategy(new ReplyToConstantNameStrategy(responseProperties.replyToNameStrategy()))
+                .correlationId(properties.getCorrelationId()));
+        val outgoing = channel.send(routingData, messageBatch);
         markAsResponded();
         return outgoing;
     }

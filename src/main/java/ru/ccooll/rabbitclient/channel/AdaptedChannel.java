@@ -7,7 +7,6 @@ import ru.ccooll.rabbitclient.common.Converter;
 import ru.ccooll.rabbitclient.error.ErrorHandler;
 import ru.ccooll.rabbitclient.message.outgoing.OutgoingBatchMessage;
 import ru.ccooll.rabbitclient.message.outgoing.OutgoingMessage;
-import ru.ccooll.rabbitclient.message.properties.MutableMessageProperties;
 import ru.ccooll.rabbitclient.util.RoutingData;
 
 import java.util.List;
@@ -31,9 +30,8 @@ public interface AdaptedChannel extends AutoCloseable {
 
     /**
      * provides a way to declare an exchange with any params and arguments
-     * <p>
      * @see com.rabbitmq.client.Channel#exchangeDeclare(String, BuiltinExchangeType, boolean, boolean, boolean, Map)
-     * for more info
+     * native channel implementation for more info
      */
     void declareExchange(String exchangeKey, BuiltinExchangeType type,
                          boolean durable, boolean autoDelete, boolean internal,
@@ -44,14 +42,17 @@ public interface AdaptedChannel extends AutoCloseable {
      * if queue routing key length is longer than 255 symbols, or channel is already closed,
      * or request of declare has expired
      *
-     * @param queueKey - routing key of queue
+     * @param queueKey   - routing key of queue
      * @param autoDelete - true if channel should delete when queue no longer in use
      */
     void declareQueue(String queueKey, boolean autoDelete);
 
+    void declareQueue(String queueKey, boolean durable, boolean autoDelete);
+
     /**
      * provides a way to declare a queue with any params and arguments
      * <p>
+     *
      * @see com.rabbitmq.client.Channel#queueDeclare(String, boolean, boolean, boolean, Map) for
      * more info
      */
@@ -105,40 +106,13 @@ public interface AdaptedChannel extends AutoCloseable {
      */
     boolean isQueueExist(String routingKey);
 
-    /**
-     * sends a message with raw body and returns an object
-     * that able to request a response. This method destined to be able to
-     * send any cached data
-     *
-     * @param routingData - routing data
-     * @param body        - raw body in bytes
-     * @return - outgoing data that able to request a response
-     */
-    OutgoingMessage send(RoutingData routingData, byte[] body);
+    OutgoingMessage send(RoutingData routingData, OutgoingMessage message);
 
-    /**
-     * converts sends a message and returns an object
-     * that able to request a response
-     *
-     * @param routingData - routing data
-     * @param message     - message object that will convert to raw bytes
-     * @param properties  - properties of message
-     * @return - outgoing data that able to request a response
-     */
-    OutgoingMessage convertAndSend(RoutingData routingData, Object message,
-                                   MutableMessageProperties properties);
+    OutgoingMessage convertAndSend(RoutingData routingData, Object message, boolean persists);
 
-    /**
-     * converts and sends a batch of messages and returns an
-     * object that able to request a response
-     *
-     * @param routingData - routing data
-     * @param messages    - messages that will convert to raw bytes
-     * @param properties  - properties of batch
-     * @return - outgoing batch data that able to request a response
-     */
-    OutgoingBatchMessage convertAndSend(RoutingData routingData, List<Object> messages,
-                                        MutableMessageProperties properties);
+    OutgoingBatchMessage convertAndSend(RoutingData routingData, List<Object> messages, boolean persists);
+
+    OutgoingBatchMessage send(RoutingData routingData, OutgoingBatchMessage message);
 
     /**
      * adds consumer

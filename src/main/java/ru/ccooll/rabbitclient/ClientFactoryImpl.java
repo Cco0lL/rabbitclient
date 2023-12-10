@@ -1,7 +1,7 @@
 package ru.ccooll.rabbitclient;
 
 import com.google.common.base.Preconditions;
-import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.*;
 import org.jetbrains.annotations.NotNull;
 import ru.ccooll.rabbitclient.common.Converter;
 import ru.ccooll.rabbitclient.common.simple.SimpleConverter;
@@ -13,9 +13,7 @@ public class ClientFactoryImpl implements ClientFactory {
 
     private ConnectionFactory connectionFactory = new ConnectionFactory();
     private Converter converter = new SimpleConverter();
-    private ErrorHandler errorHandler = (ex) -> {
-        throw new IllegalStateException(ex);
-    };
+    private ErrorHandler errorHandler = Throwable::printStackTrace;
 
     @Override
     public ClientFactory setConnectionFactory(@NotNull ConnectionFactory connectionFactory) {

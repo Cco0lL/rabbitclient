@@ -1,23 +1,19 @@
 package ru.ccooll.rabbitclient.common;
 
-import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.Setter;
+import lombok.experimental.Accessors;
+import ru.ccooll.rabbitclient.error.ErrorHandler;
 
-import java.io.IOException;
-
-@AllArgsConstructor
+@RequiredArgsConstructor
+@Setter
+@Getter
+@Accessors(fluent = true, chain = false)
 public abstract class AbstractConverter<S extends Serializer,
         D extends Deserializer> implements Converter {
 
-    protected S serializer;
-    protected D deserializer;
-
-    @Override
-    public byte[] convertToBytes(Object object) throws IOException {
-        return serializer.serialize(object);
-    }
-
-    @Override
-    public <T> T convertFromBytes(byte[] bytes, Class<T> targetClass) throws IOException {
-        return deserializer.deserialize(bytes, targetClass);
-    }
+    protected final S serializer;
+    protected final D deserializer;
+    protected ErrorHandler errorHandler;
 }

@@ -6,7 +6,6 @@ import ru.ccooll.rabbitclient.channel.AdaptedChannel;
 import ru.ccooll.rabbitclient.message.Message;
 import ru.ccooll.rabbitclient.message.incoming.IncomingBatchMessage;
 import ru.ccooll.rabbitclient.message.incoming.IncomingMessage;
-import ru.ccooll.rabbitclient.util.MessagePropertiesUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -19,6 +18,8 @@ import java.util.concurrent.CompletableFuture;
  */
 public interface Outgoing extends Message {
 
+    void setSenderChannel(AdaptedChannel sender);
+
     void markRequestedResponse();
 
     boolean isRequestedResponse();
@@ -27,17 +28,18 @@ public interface Outgoing extends Message {
         if (isRequestedResponse()) {
             throw new IllegalStateException("response already requested");
         }
+        val channel = channel();
+        if(channel == null) {
+            throw new IllegalStateException("Message wasn't sent");
+        }
 
         CompletableFuture<IncomingMessage<T>> future = new CompletableFuture<>();
-
-        val channel = channel();
         val properties = properties();
 
         channel.declareQueue(properties.getReplyTo(), true);
+        val converter = channel.converter();
         CallbackConsumer consumer = (deliveryTag, incomingProperties, body) -> {
-            val errorHandler = channel.errorHandler();
-            val converter = channel.converter();
-            val message = errorHandler.computeSafe(() -> converter.convertFromBytes(body, rClass));
+            val message = converter.convert(body, rClass);
             future.complete(new IncomingMessage<>(channel, incomingProperties, message));
             channel.ack(deliveryTag, false);
         };
@@ -55,24 +57,27 @@ public interface Outgoing extends Message {
         if (isRequestedResponse()) {
             throw new IllegalStateException("response already requested");
         }
+        val channel = channel();
+        if(channel == null) {
+            throw new IllegalStateException("Message wasn't sent");
+        }
 
         List<T> messages = Collections.synchronizedList(new ArrayList<>());
         CompletableFuture<IncomingBatchMessage<T>> future = new CompletableFuture<>();
 
         val properties = properties();
-        val channel = channel();
-
         channel.declareQueue(properties.getReplyTo(), true);
-        CallbackConsumer consumer = (deliveryTag, incomingProperties, body) -> {
-            val errorHandler = channel.errorHandler();
-            val converter = channel.converter();
-            val message = errorHandler.computeSafe(() -> converter.convertFromBytes(body, rClass));
-            messages.add(message);
 
+        val converter = channel.converter();
+        CallbackConsumer consumer = (deliveryTag, incomingProperties, body) -> {
+            val message = converter.convert(body, rClass);
+            messages.add(message);
             val headers = incomingProperties.getHeaders();
-            if (headers == null) return;
+            if (headers == null) {
+                return;
+            }
             //value is boolean, always true if this header exists
-            if (headers.containsKey(MessagePropertiesUtils.END_BATCH_POINTER)) {
+            if (headers.containsKey(OutgoingBatchMessage.END_BATCH_POINTER)) {
                 future.complete(new IncomingBatchMessage<>(channel, incomingProperties,
                         new ArrayList<>(messages)));
                 channel.ack(deliveryTag, true);
