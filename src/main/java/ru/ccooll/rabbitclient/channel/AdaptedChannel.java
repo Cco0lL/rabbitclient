@@ -17,7 +17,7 @@ import java.util.function.BiConsumer;
 /**
  * represents an adapter of rabbit channel
  */
-public interface AdaptedChannel {
+public interface AdaptedChannel extends AutoCloseable {
 
     /**
      * declares an exchange, throws IOException that handles by
@@ -170,8 +170,6 @@ public interface AdaptedChannel {
 
     ErrorHandler errorHandler();
 
-    /**
-     * closes channel
-     */
+    @Override
     void close();
 }
