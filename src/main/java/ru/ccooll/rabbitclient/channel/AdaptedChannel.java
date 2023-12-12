@@ -76,6 +76,8 @@ public interface AdaptedChannel extends AutoCloseable {
      */
     void removeQueue(String queueKey);
 
+    void purgeQueue(String queue);
+
     /**
      * binds queue to exchange with a specific routing key for this exchange throws IOException
      * that handles by errors handler if queue routing key length longer than 255 or channel

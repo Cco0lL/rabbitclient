@@ -60,6 +60,11 @@ public record AdaptedChannelImpl(Channel channel, Converter converter,
     }
 
     @Override
+    public void purgeQueue(String queue) {
+        errorHandler.computeSafe(() -> channel.queuePurge(queue));
+    }
+
+    @Override
     public void bindQueueToExchange(String queueKey, String exchangeKey, String bindingKey) {
         errorHandler.computeSafe(() -> channel.queueBind(queueKey, exchangeKey, bindingKey));
     }
