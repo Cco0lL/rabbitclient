@@ -5,7 +5,9 @@ import org.jetbrains.annotations.NotNull;
 import ru.ccooll.rabbitclient.common.Converter;
 import ru.ccooll.rabbitclient.error.ErrorHandler;
 
+import java.io.IOException;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeoutException;
 
 /**
  * represents client factory
@@ -50,4 +52,8 @@ public interface ClientFactory {
      * @return this
      */
     Client createNew(@NotNull String name, @NotNull ExecutorService clientWorker);
+
+    Client createNewAndConnect(@NotNull String name,
+                               @NotNull ExecutorService clientWorker)
+            throws IOException, TimeoutException;
 }

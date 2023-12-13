@@ -29,7 +29,6 @@ public class ClientImpl implements Client {
         converter.errorHandler(errorHandler);
     }
 
-
     @Override
     public String name() {
         return name;
@@ -61,7 +60,7 @@ public class ClientImpl implements Client {
 
     @Override
     public void close() {
-        clientWorker.shutdown();
         errorHandler.computeSafe(() -> connection.close());
+        clientWorker.shutdown();
     }
 }

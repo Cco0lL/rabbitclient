@@ -15,10 +15,16 @@ import ru.ccooll.rabbitclient.channel.AdaptedChannel;
 @Accessors(fluent = true)
 public class IncomingMessage<T> implements Incoming<T> {
 
+    long deliveryTag;
     AdaptedChannel channel;
     AMQP.BasicProperties properties;
     T message;
     @NonFinal @Getter(AccessLevel.NONE) boolean isAlreadyResponded = false;
+
+    @Override
+    public long deliveryTag() {
+        return deliveryTag;
+    }
 
     @Override
     public void markAsResponded() {

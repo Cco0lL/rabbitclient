@@ -2,12 +2,15 @@ package ru.ccooll.rabbitclient;
 
 import com.google.common.base.Preconditions;
 import com.rabbitmq.client.*;
+import lombok.val;
 import org.jetbrains.annotations.NotNull;
 import ru.ccooll.rabbitclient.common.Converter;
 import ru.ccooll.rabbitclient.common.simple.SimpleConverter;
 import ru.ccooll.rabbitclient.error.ErrorHandler;
 
+import java.io.IOException;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeoutException;
 
 public class ClientFactoryImpl implements ClientFactory {
 
@@ -41,5 +44,14 @@ public class ClientFactoryImpl implements ClientFactory {
         Preconditions.checkNotNull(name, "name is null");
         Preconditions.checkNotNull(clientWorker, "client worker is null");
         return new ClientImpl(connectionFactory, name, clientWorker, converter, errorHandler);
+    }
+
+    @Override
+    public Client createNewAndConnect(@NotNull String name,
+                                      @NotNull ExecutorService clientWorker)
+            throws IOException, TimeoutException {
+        val client = createNew(name, clientWorker);
+        client.connect();
+        return client;
     }
 }

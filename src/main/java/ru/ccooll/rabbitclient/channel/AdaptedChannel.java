@@ -1,17 +1,17 @@
 package ru.ccooll.rabbitclient.channel;
 
 import com.rabbitmq.client.BuiltinExchangeType;
-import com.rabbitmq.client.Delivery;
 import org.jetbrains.annotations.Nullable;
 import ru.ccooll.rabbitclient.common.Converter;
 import ru.ccooll.rabbitclient.error.ErrorHandler;
+import ru.ccooll.rabbitclient.message.incoming.IncomingMessage;
 import ru.ccooll.rabbitclient.message.outgoing.OutgoingBatchMessage;
 import ru.ccooll.rabbitclient.message.outgoing.OutgoingMessage;
 import ru.ccooll.rabbitclient.util.RoutingData;
 
 import java.util.List;
 import java.util.Map;
-import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 /**
  * represents an adapter of rabbit channel
@@ -30,6 +30,7 @@ public interface AdaptedChannel extends AutoCloseable {
 
     /**
      * provides a way to declare an exchange with any params and arguments
+     *
      * @see com.rabbitmq.client.Channel#exchangeDeclare(String, BuiltinExchangeType, boolean, boolean, boolean, Map)
      * native channel implementation for more info
      */
@@ -116,6 +117,10 @@ public interface AdaptedChannel extends AutoCloseable {
 
     OutgoingBatchMessage send(RoutingData routingData, OutgoingBatchMessage message);
 
+    default <T> String addConsumer(String routingKey, Class<T> cClass, Consumer<IncomingMessage<T>> consumer) {
+        return addConsumer(routingKey, true, cClass, consumer);
+    }
+
     /**
      * adds consumer
      *
@@ -125,7 +130,7 @@ public interface AdaptedChannel extends AutoCloseable {
      * @param consumer   - consumer
      * @return - consumer's tag for able to remove consumer, returns null if an error has been occurred
      */
-    @Nullable String addConsumer(String routingKey, boolean autoAck, BiConsumer<String, Delivery> consumer);
+    @Nullable <T> String addConsumer(String routingKey, boolean autoAck, Class<T> cClass, Consumer<IncomingMessage<T>> consumer);
 
     /**
      * removes consumer
@@ -141,6 +146,10 @@ public interface AdaptedChannel extends AutoCloseable {
      * @param multiple    - if true, that acknowledges all previous acknowledged messages in specified consumer
      */
     void ack(long deliveryTag, boolean multiple);
+
+    void qos(int prefetchSize, int prefetchCount, boolean global);
+
+    void qos(int prefetchCount, boolean global);
 
     Converter converter();
 

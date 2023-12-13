@@ -2,11 +2,11 @@ package ru.ccooll.rabbitclient.channel;
 
 import com.rabbitmq.client.BuiltinExchangeType;
 import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Delivery;
 import lombok.val;
 import org.jetbrains.annotations.Nullable;
 import ru.ccooll.rabbitclient.common.Converter;
 import ru.ccooll.rabbitclient.error.ErrorHandler;
+import ru.ccooll.rabbitclient.message.incoming.IncomingMessage;
 import ru.ccooll.rabbitclient.message.outgoing.OutgoingBatchMessage;
 import ru.ccooll.rabbitclient.message.outgoing.OutgoingMessage;
 import ru.ccooll.rabbitclient.util.RoutingData;
@@ -14,7 +14,7 @@ import ru.ccooll.rabbitclient.util.RoutingData;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 public record AdaptedChannelImpl(Channel channel, Converter converter,
                                  ErrorHandler errorHandler) implements AdaptedChannel {
@@ -120,9 +120,14 @@ public record AdaptedChannelImpl(Channel channel, Converter converter,
     }
 
     @Override
-    public @Nullable String addConsumer(String routingKey, boolean autoAck, BiConsumer<String, Delivery> consumer) {
+    public @Nullable <T> String addConsumer(String routingKey, boolean autoAck, Class<T> cClass,
+                                            Consumer<IncomingMessage<T>> consumer) {
         return errorHandler.computeSafe(() ->
-                channel.basicConsume(routingKey, autoAck, consumer::accept,
+                channel.basicConsume(routingKey, autoAck, (consumerTag, message) ->
+                                consumer.accept(new IncomingMessage<>(
+                                        message.getEnvelope().getDeliveryTag(), this,
+                                        message.getProperties(),
+                                        converter.convert(message.getBody(), cClass))),
                         (consumerTag, sig) -> { /*TODO*/ }));
     }
 
@@ -134,6 +139,16 @@ public record AdaptedChannelImpl(Channel channel, Converter converter,
     @Override
     public void ack(long deliveryTag, boolean multiple) {
         errorHandler.computeSafe(() -> channel.basicAck(deliveryTag, multiple));
+    }
+
+    @Override
+    public void qos(int prefetchSize, int prefetchCount, boolean global) {
+        errorHandler.computeSafe(() -> channel.basicQos(prefetchSize, prefetchCount, global));
+    }
+
+    @Override
+    public void qos(int prefetchCount, boolean global) {
+        errorHandler.computeSafe(() -> channel.basicQos(prefetchCount, global));
     }
 
     @Override

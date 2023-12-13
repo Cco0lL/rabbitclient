@@ -18,6 +18,8 @@ import java.util.List;
  */
 public interface Incoming<T> extends Message {
 
+    long deliveryTag();
+
     T message();
 
     void markAsResponded();

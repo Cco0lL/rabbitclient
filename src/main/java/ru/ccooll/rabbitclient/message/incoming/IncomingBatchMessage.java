@@ -17,10 +17,16 @@ import java.util.List;
 @Accessors(fluent = true)
 public class IncomingBatchMessage<T> implements Incoming<List<T>> {
 
+    long deliveryTag;
     AdaptedChannel channel;
     AMQP.BasicProperties properties;
     List<T> message;
     @NonFinal @Getter(AccessLevel.NONE) boolean isAlreadyResponded = false;
+
+    @Override
+    public long deliveryTag() {
+        return deliveryTag;
+    }
 
     @Override
     public void markAsResponded() {

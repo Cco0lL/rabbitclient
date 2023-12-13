@@ -1,6 +1,5 @@
 package ru.ccooll.rabbitclient.message.outgoing;
 
-import com.rabbitmq.client.AMQP;
 import lombok.val;
 import ru.ccooll.rabbitclient.channel.AdaptedChannel;
 import ru.ccooll.rabbitclient.message.Message;
@@ -29,26 +28,21 @@ public interface Outgoing extends Message {
             throw new IllegalStateException("response already requested");
         }
         val channel = channel();
-        if(channel == null) {
+        if (channel == null) {
             throw new IllegalStateException("Message wasn't sent");
         }
 
         CompletableFuture<IncomingMessage<T>> future = new CompletableFuture<>();
         val properties = properties();
 
-        channel.declareQueue(properties.getReplyTo(), true);
-        val converter = channel.converter();
-        CallbackConsumer consumer = (deliveryTag, incomingProperties, body) -> {
-            val message = converter.convert(body, rClass);
-            future.complete(new IncomingMessage<>(channel, incomingProperties, message));
-            channel.ack(deliveryTag, false);
-        };
-        val ct = consumer.consume(channel, properties);
+        val replyTo = properties.getReplyTo();
+        channel.declareQueue(replyTo, true);
+        val ct = channel.addConsumer(replyTo, rClass, future::complete);
         markRequestedResponse();
 
         return future.thenApply(it -> {
             channel.removeConsumer(ct);
-            channel.removeQueue(properties.getReplyTo());
+            channel.removeQueue(replyTo);
             return it;
         });
     }
@@ -58,7 +52,7 @@ public interface Outgoing extends Message {
             throw new IllegalStateException("response already requested");
         }
         val channel = channel();
-        if(channel == null) {
+        if (channel == null) {
             throw new IllegalStateException("Message wasn't sent");
         }
 
@@ -68,22 +62,21 @@ public interface Outgoing extends Message {
         val properties = properties();
         channel.declareQueue(properties.getReplyTo(), true);
 
-        val converter = channel.converter();
-        CallbackConsumer consumer = (deliveryTag, incomingProperties, body) -> {
-            val message = converter.convert(body, rClass);
-            messages.add(message);
+        val ct = channel.addConsumer(properties.getReplyTo(), false, rClass, mes -> {
+            messages.add(mes.message());
+            val incomingProperties = mes.properties();
             val headers = incomingProperties.getHeaders();
             if (headers == null) {
                 return;
             }
             //value is boolean, always true if this header exists
             if (headers.containsKey(OutgoingBatchMessage.END_BATCH_POINTER)) {
-                future.complete(new IncomingBatchMessage<>(channel, incomingProperties,
+                val deliveryTag = mes.deliveryTag();
+                future.complete(new IncomingBatchMessage<>(deliveryTag, channel, incomingProperties,
                         new ArrayList<>(messages)));
                 channel.ack(deliveryTag, true);
             }
-        };
-        val ct = consumer.consume(channel, properties);
+        });
         markRequestedResponse();
 
         return future.thenApply(it -> {
@@ -91,21 +84,5 @@ public interface Outgoing extends Message {
             channel.removeQueue(properties.getReplyTo());
             return it;
         });
-    }
-
-    @FunctionalInterface
-    interface CallbackConsumer {
-
-        void handleDelivery(long deliveryTag, AMQP.BasicProperties properties, byte[] body);
-
-        default String consume(AdaptedChannel channel, AMQP.BasicProperties properties) {
-            return channel.addConsumer(properties.getReplyTo(), false, ((consumerTag, delivery) -> {
-                val incomingProperties = delivery.getProperties();
-                if (incomingProperties.getCorrelationId().equals(properties.getCorrelationId())) {
-                    val envelope = delivery.getEnvelope();
-                    handleDelivery(envelope.getDeliveryTag(), incomingProperties, delivery.getBody());
-                }
-            }));
-        }
     }
 }

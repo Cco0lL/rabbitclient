@@ -24,21 +24,21 @@ public interface RoutingData {
     String routingKey();
 
     @Contract(pure = true)
-    RoutingData exchange(@NotNull String exchange);
+    RoutingData withExchange(@NotNull String exchange);
 
     @Contract(pure = true)
-    RoutingData routingKey(@NotNull String routingKey);
+    RoutingData withRoutingKey(@NotNull String routingKey);
 
     record RoutingDataImpl(@NotNull String exchange,
                            @NotNull String routingKey) implements RoutingData {
 
         @Override
-        public RoutingData exchange(@NotNull String exchange) {
+        public RoutingData withExchange(@NotNull String exchange) {
             return RoutingData.of(exchange, routingKey);
         }
 
         @Override
-        public RoutingData routingKey(@NotNull String routingKey) {
+        public RoutingData withRoutingKey(@NotNull String routingKey) {
             return RoutingData.of(exchange, routingKey);
         }
     }
