@@ -2,6 +2,7 @@ package ru.ccooll.rabbitclient.channel;
 
 import com.rabbitmq.client.BuiltinExchangeType;
 import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Delivery;
 import lombok.val;
 import org.jetbrains.annotations.Nullable;
 import ru.ccooll.rabbitclient.common.Converter;
@@ -130,10 +131,17 @@ public record AdaptedChannelImpl(Channel channel, Converter converter,
         return errorHandler.computeSafe(() ->
                 channel.basicConsume(routingKey, autoAck, (consumerTag, message) ->
                                 consumer.accept(new IncomingMessage<>(
-                                        message.getEnvelope().getDeliveryTag(), this,
-                                        message.getProperties(),
+                                        this, message.getEnvelope(), message.getProperties(),
                                         converter.convert(message.getBody(), cClass))),
                         (consumerTag, sig) -> { /*TODO*/ }));
+    }
+
+    @Override
+    public String addConsumer(String routingKey, boolean autoAck, Consumer<Delivery> consumer) {
+        return errorHandler.computeSafe(() ->
+                channel.basicConsume(routingKey, autoAck,
+                        ((consumerTag, message) -> consumer.accept(message)),
+                        ((consumerTag, sig) -> { /*TODO*/ } )));
     }
 
     @Override

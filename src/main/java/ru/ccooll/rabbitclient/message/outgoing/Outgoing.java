@@ -71,10 +71,10 @@ public interface Outgoing extends Message {
             }
             //value is boolean, always true if this header exists
             if (headers.containsKey(OutgoingBatchMessage.END_BATCH_POINTER)) {
-                val deliveryTag = mes.deliveryTag();
-                future.complete(new IncomingBatchMessage<>(deliveryTag, channel, incomingProperties,
+                val envelope = mes.envelope();
+                future.complete(new IncomingBatchMessage<>(channel, envelope, incomingProperties,
                         new ArrayList<>(messages)));
-                channel.ack(deliveryTag, true);
+                channel.ack(envelope.getDeliveryTag(), true);
             }
         });
         markRequestedResponse();

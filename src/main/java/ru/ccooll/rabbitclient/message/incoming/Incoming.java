@@ -1,5 +1,7 @@
 package ru.ccooll.rabbitclient.message.incoming;
 
+import com.rabbitmq.client.Delivery;
+import com.rabbitmq.client.Envelope;
 import lombok.val;
 import ru.ccooll.rabbitclient.message.Message;
 import ru.ccooll.rabbitclient.message.outgoing.OutgoingBatchMessage;
@@ -18,7 +20,7 @@ import java.util.List;
  */
 public interface Incoming<T> extends Message {
 
-    long deliveryTag();
+    Envelope envelope();
 
     T message();
 

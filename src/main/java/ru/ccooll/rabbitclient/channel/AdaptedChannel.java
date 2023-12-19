@@ -1,6 +1,7 @@
 package ru.ccooll.rabbitclient.channel;
 
 import com.rabbitmq.client.BuiltinExchangeType;
+import com.rabbitmq.client.Delivery;
 import org.jetbrains.annotations.Nullable;
 import ru.ccooll.rabbitclient.common.Converter;
 import ru.ccooll.rabbitclient.error.ErrorHandler;
@@ -133,6 +134,12 @@ public interface AdaptedChannel extends AutoCloseable {
      * @return - consumer's tag for able to remove consumer, returns null if an error has been occurred
      */
     @Nullable <T> String addConsumer(String routingKey, boolean autoAck, Class<T> cClass, Consumer<IncomingMessage<T>> consumer);
+
+    default String addConsumer(String routingKey, Consumer<Delivery> consumer) {
+        return addConsumer(routingKey, true, consumer);
+    }
+
+    String addConsumer(String routingKey, boolean autoAck, Consumer<Delivery> consumer);
 
     /**
      * removes consumer

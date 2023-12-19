@@ -1,6 +1,8 @@
 package ru.ccooll.rabbitclient.message.incoming;
 
 import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.Delivery;
+import com.rabbitmq.client.Envelope;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -15,15 +17,15 @@ import ru.ccooll.rabbitclient.channel.AdaptedChannel;
 @Accessors(fluent = true)
 public class IncomingMessage<T> implements Incoming<T> {
 
-    long deliveryTag;
     AdaptedChannel channel;
+    Envelope envelope;
     AMQP.BasicProperties properties;
     T message;
     @NonFinal @Getter(AccessLevel.NONE) boolean isAlreadyResponded = false;
 
     @Override
-    public long deliveryTag() {
-        return deliveryTag;
+    public Envelope envelope() {
+        return envelope;
     }
 
     @Override
