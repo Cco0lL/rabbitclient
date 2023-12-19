@@ -33,6 +33,11 @@ public record AdaptedChannelImpl(Channel channel, Converter converter,
     }
 
     @Override
+    public String declareQueue() {
+        return errorHandler.computeSafe(() -> channel.queueDeclare().getQueue());
+    }
+
+    @Override
     public void declareQueue(String queueKey, boolean autoDelete) {
         declareQueue(queueKey, false, false, autoDelete, null);
     }

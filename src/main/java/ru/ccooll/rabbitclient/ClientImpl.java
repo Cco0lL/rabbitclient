@@ -46,10 +46,15 @@ public class ClientImpl implements Client {
 
     @Override
     public void connect() throws IOException, TimeoutException {
-        if (connection != null) {
+        if (isConnected()) {
             throw new IOException("Client is already connected");
         }
         connection = connectionFactory.newConnection(clientWorker, name);
+    }
+
+    @Override
+    public boolean isConnected() {
+        return connection != null;
     }
 
     @Override

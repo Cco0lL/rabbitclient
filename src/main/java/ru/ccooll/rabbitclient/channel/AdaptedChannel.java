@@ -38,6 +38,8 @@ public interface AdaptedChannel extends AutoCloseable {
                          boolean durable, boolean autoDelete, boolean internal,
                          Map<String, Object> arguments);
 
+    String declareQueue();
+
     /**
      * declares a queue, throws IOException that handles by errors handler
      * if queue routing key length is longer than 255 symbols, or channel is already closed,

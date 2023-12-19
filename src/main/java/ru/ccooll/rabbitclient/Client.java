@@ -21,6 +21,8 @@ public interface Client extends AutoCloseable {
 
     void connect() throws IOException, TimeoutException;
 
+    boolean isConnected();
+
     /**
      * creates channel with default serializers
      */
