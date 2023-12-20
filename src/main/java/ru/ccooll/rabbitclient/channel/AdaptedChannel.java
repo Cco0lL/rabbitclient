@@ -10,6 +10,7 @@ import ru.ccooll.rabbitclient.message.outgoing.OutgoingBatchMessage;
 import ru.ccooll.rabbitclient.message.outgoing.OutgoingMessage;
 import ru.ccooll.rabbitclient.util.RoutingData;
 
+import java.io.Closeable;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -19,7 +20,7 @@ import java.util.function.Consumer;
 /**
  * represents an adapter of rabbit channel
  */
-public interface AdaptedChannel extends AutoCloseable {
+public interface AdaptedChannel extends Closeable {
 
     /**
      * declares an exchange, throws IOException that handles by
