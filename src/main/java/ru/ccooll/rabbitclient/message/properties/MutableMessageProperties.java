@@ -20,7 +20,7 @@ import java.util.UUID;
 @Getter @Setter
 public class MutableMessageProperties {
 
-    private MessageTypeProperties messageTypeProperties;
+    private MessageTypeProperties messageTypeProperties = MessageTypeProperties.BINARY;
     private ReplyToNameStrategy replyToNameStrategy = SimpleReplyToStrategy.get();
     private String correlationId = UUID.randomUUID().toString();
     private final Map<String, Object> headers = new HashMap<>();

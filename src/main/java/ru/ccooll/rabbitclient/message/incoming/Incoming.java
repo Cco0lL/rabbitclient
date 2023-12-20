@@ -22,8 +22,6 @@ public interface Incoming<T> extends Message {
 
     Envelope envelope();
 
-    T message();
-
     void markAsResponded();
 
     boolean isAlreadyResponded();

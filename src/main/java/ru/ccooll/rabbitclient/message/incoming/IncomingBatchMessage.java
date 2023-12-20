@@ -17,7 +17,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @Getter
 @Accessors(fluent = true)
-public class IncomingBatchMessage<T> implements Incoming<List<T>> {
+public class IncomingBatchMessage<T> implements Incoming<T> {
 
     AdaptedChannel channel;
     Envelope envelope;

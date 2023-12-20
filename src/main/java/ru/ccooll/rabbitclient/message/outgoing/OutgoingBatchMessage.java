@@ -10,6 +10,7 @@ import ru.ccooll.rabbitclient.message.properties.MutableMessageProperties;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 @Getter
 @Accessors(fluent = true)
@@ -29,12 +30,22 @@ public class OutgoingBatchMessage extends AbstractOutgoing {
         }
 
         @Override
-        public <T> CompletableFuture<IncomingMessage<T>> responseRequest(Class<T> rClass) {
+        public <T> IncomingMessage<T> responseRequest(Class<T> rClass) {
             throw new UnsupportedOperationException("empty batch can't request any message");
         }
 
         @Override
-        public <T> CompletableFuture<IncomingBatchMessage<T>> responseRequestBatch(Class<T> rClass) {
+        public <T> IncomingMessage<T> responseRequest(Class<T> rClass, long waitTime, TimeUnit timeUnit) {
+            throw new UnsupportedOperationException("empty batch can't request any message");
+        }
+
+        @Override
+        public <T> IncomingBatchMessage<T> responseRequestBatch(Class<T> rClass) {
+            throw new UnsupportedOperationException("empty batch can't request any message");
+        }
+
+        @Override
+        public <T> IncomingBatchMessage<T> responseRequestBatch(Class<T> rClass, long waitTime, TimeUnit timeUnit) {
             throw new UnsupportedOperationException("empty batch can't request any message");
         }
     };

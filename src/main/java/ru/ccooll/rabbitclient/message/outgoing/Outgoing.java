@@ -7,9 +7,9 @@ import ru.ccooll.rabbitclient.message.incoming.IncomingBatchMessage;
 import ru.ccooll.rabbitclient.message.incoming.IncomingMessage;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 /**
  * represents interface that able to request response
@@ -23,66 +23,38 @@ public interface Outgoing extends Message {
 
     boolean isRequestedResponse();
 
-    default <T> CompletableFuture<IncomingMessage<T>> responseRequest(Class<T> rClass) {
-        if (isRequestedResponse()) {
-            throw new IllegalStateException("response already requested");
-        }
-        val channel = channel();
-        if (channel == null) {
-            throw new IllegalStateException("Message wasn't sent");
-        }
-
-        CompletableFuture<IncomingMessage<T>> future = new CompletableFuture<>();
-        val properties = properties();
-
-        val replyTo = properties.getReplyTo();
-        channel.declareQueue(replyTo, true);
-        val ct = channel.addConsumer(replyTo, rClass, future::complete);
-        markRequestedResponse();
-
-        return future.thenApply(it -> {
-            channel.removeConsumer(ct);
-            channel.removeQueue(replyTo);
-            return it;
-        });
+    default <T> IncomingMessage<T> responseRequest(Class<T> rClass) {
+        return responseRequest(rClass, -1, TimeUnit.MILLISECONDS);
     }
 
-    default <T> CompletableFuture<IncomingBatchMessage<T>> responseRequestBatch(Class<T> rClass) {
-        if (isRequestedResponse()) {
-            throw new IllegalStateException("response already requested");
-        }
-        val channel = channel();
-        if (channel == null) {
-            throw new IllegalStateException("Message wasn't sent");
-        }
+    default <T> IncomingMessage<T> responseRequest(Class<T> rClass, long waitTime, TimeUnit timeUnit) {
+        ResponseConsumer<T, IncomingMessage<T>> responseConsumer =
+                (rclass, message, forComplete) -> forComplete.complete(message);
+        return responseConsumer.consumeResponse(rClass, this, true, waitTime, timeUnit);
+    }
 
-        List<T> messages = Collections.synchronizedList(new ArrayList<>());
-        CompletableFuture<IncomingBatchMessage<T>> future = new CompletableFuture<>();
+    default <T> IncomingBatchMessage<T> responseRequestBatch(Class<T> rClass) {
+        return responseRequestBatch(rClass, -1, TimeUnit.MILLISECONDS);
+    }
 
-        val properties = properties();
-        channel.declareQueue(properties.getReplyTo(), true);
-
-        val ct = channel.addConsumer(properties.getReplyTo(), false, rClass, mes -> {
-            messages.add(mes.message());
-            val incomingProperties = mes.properties();
+    default <T> IncomingBatchMessage<T> responseRequestBatch(Class<T> rClass, long waitTime, TimeUnit timeUnit) {
+        List<T> messages = new ArrayList<>();
+        ResponseConsumer<T, IncomingBatchMessage<T>> responseConsumer = (rclass, message, forComplete) -> {
+            messages.add(message.message());
+            val incomingProperties = message.properties();
             val headers = incomingProperties.getHeaders();
             if (headers == null) {
                 return;
             }
             //value is boolean, always true if this header exists
             if (headers.containsKey(OutgoingBatchMessage.END_BATCH_POINTER)) {
-                val envelope = mes.envelope();
-                future.complete(new IncomingBatchMessage<>(channel, envelope, incomingProperties,
-                        new ArrayList<>(messages)));
+                val envelope = message.envelope();
+                AdaptedChannel channel = message.channel();
+                forComplete.complete(new IncomingBatchMessage<>(channel, envelope, incomingProperties,
+                        messages));
                 channel.ack(envelope.getDeliveryTag(), true);
             }
-        });
-        markRequestedResponse();
-
-        return future.thenApply(it -> {
-            channel.removeConsumer(ct);
-            channel.removeQueue(properties.getReplyTo());
-            return it;
-        });
+        };
+        return responseConsumer.consumeResponse(rClass, this, false, waitTime, timeUnit);
     }
 }

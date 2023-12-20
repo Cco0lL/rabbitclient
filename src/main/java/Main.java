@@ -6,15 +6,17 @@ import ru.ccooll.rabbitclient.ClientFactory;
 import ru.ccooll.rabbitclient.util.RoutingData;
 
 import java.util.ArrayList;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public class Main {
 
     public static void main(String[] args) {
-        //testDefaultClient();
+        testDefaultClient();
         //testImpl();
-        topicExchangeTest();
+        //topicExchangeTest();
     }
 
     private static void testDefaultClient() {
@@ -32,19 +34,10 @@ public class Main {
         try (val client = cf.createNew("test", Executors.newFixedThreadPool(10,
                 new ThreadFactoryBuilder().setNameFormat("client-worker-%d").build()))) {
             client.connect();
-            val countDownLatch = new CountDownLatch(1);
+
             val channel = client.createChannel();
             channel.declareQueue("test", true, false);
             val message = channel.convertAndSend(RoutingData.of("test"), "Hello", true);
-
-            message.responseRequestBatch(Integer.class)
-                    .thenAccept((it) -> {
-                        val list = it.message();
-                        System.out.println(list.toString());
-                        System.out.println(it.properties().getContentType());
-                        System.out.println(it.properties().getDeliveryMode());
-                        countDownLatch.countDown();
-                    });
 
             channel.addConsumer("test", String.class, mes -> {
                 System.out.println(mes.message());
@@ -55,7 +48,11 @@ public class Main {
                 mes.sendResponseBatch(intList, true);
             });
 
-            countDownLatch.await();
+            val batch = message.responseRequestBatch(Integer.class);
+            System.out.println(batch.message().toString());
+            System.out.println(batch.properties().getContentType());
+            System.out.println(batch.properties().getDeliveryMode());
+
         } catch (Throwable th) {
             throw new IllegalStateException(th);
         }
