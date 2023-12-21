@@ -25,8 +25,9 @@ public interface ReceiveConsumer<R, T extends Incoming<R>> {
                 return future.get(waitTime, timeUnit);
             }
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
-            channel.removeConsumer(receiveData.consumerTag());
             return null;
+        } finally {
+            channel.removeConsumer(receiveData.consumerTag);
         }
     }
 
@@ -36,13 +37,8 @@ public interface ReceiveConsumer<R, T extends Incoming<R>> {
         String consumerTag = channel.addConsumer(routingKey, autoAck, rClass,
                 mes -> onReceive(future, mes));
 
-        return new ReceiveData<>(consumerTag, future.thenApply(mes -> {
-            channel.removeConsumer(consumerTag);
-            return mes;
-        }));
+        return new ReceiveData<>(consumerTag, future);
     }
 
-    record ReceiveData<T>(String consumerTag, CompletableFuture<T> future) {
-
-    }
+    record ReceiveData<T>(String consumerTag, CompletableFuture<T> future) {}
 }
