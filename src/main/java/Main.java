@@ -3,18 +3,18 @@ import com.rabbitmq.client.BuiltinExchangeType;
 import com.rabbitmq.client.ConnectionFactory;
 import lombok.val;
 import ru.ccooll.rabbitclient.ClientFactory;
+import ru.ccooll.rabbitclient.channel.AdaptedChannel;
 import ru.ccooll.rabbitclient.util.RoutingData;
 
 import java.util.ArrayList;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 public class Main {
 
     public static void main(String[] args) {
-        testDefaultClient();
+        testReceive();
+        //testDefaultClient();
         //testImpl();
         //topicExchangeTest();
     }
@@ -48,11 +48,41 @@ public class Main {
                 mes.sendResponseBatch(intList, true);
             });
 
-            val batch = message.responseRequestBatch(Integer.class);
+            val batch = message.responseRequestBatch(Integer.class).join();
             System.out.println(batch.message().toString());
             System.out.println(batch.properties().getContentType());
             System.out.println(batch.properties().getDeliveryMode());
 
+        } catch (Throwable th) {
+            throw new IllegalStateException(th);
+        }
+    }
+
+    static void testReceive() {
+        ConnectionFactory factory = new ConnectionFactory() {
+            {
+                setUsername("kul");
+                setPassword("verycool");
+                setHost("localhost");
+                setPort(5672);
+            }
+        };
+        ClientFactory cf = ClientFactory.newInstance()
+                .setConnectionFactory(factory);
+        try (val client = cf.createNew("test", Executors.newFixedThreadPool(10,
+                new ThreadFactoryBuilder().setNameFormat("client-worker-%d").build()))) {
+            client.connect();
+            AdaptedChannel channel = client.createChannel();
+
+            CountDownLatch latch = new CountDownLatch(1);
+
+            channel.receive("test", String.class).thenAccept(it -> {
+                System.out.println(it.message());
+                latch.countDown();
+            });
+
+            channel.convertAndSend(RoutingData.of("test"), "hello", true);
+            latch.await();
         } catch (Throwable th) {
             throw new IllegalStateException(th);
         }

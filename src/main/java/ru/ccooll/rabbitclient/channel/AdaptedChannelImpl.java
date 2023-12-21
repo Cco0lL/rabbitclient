@@ -3,13 +3,11 @@ package ru.ccooll.rabbitclient.channel;
 import com.rabbitmq.client.BuiltinExchangeType;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Delivery;
-import com.rabbitmq.client.GetResponse;
 import lombok.val;
 import org.jetbrains.annotations.Nullable;
 import ru.ccooll.rabbitclient.common.Converter;
 import ru.ccooll.rabbitclient.error.ErrorHandler;
 import ru.ccooll.rabbitclient.message.ReceiveConsumer;
-import ru.ccooll.rabbitclient.message.incoming.Incoming;
 import ru.ccooll.rabbitclient.message.incoming.IncomingMessage;
 import ru.ccooll.rabbitclient.message.outgoing.OutgoingBatchMessage;
 import ru.ccooll.rabbitclient.message.outgoing.OutgoingMessage;
@@ -19,7 +17,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 public record AdaptedChannelImpl(Channel channel, Converter converter,
@@ -131,11 +128,9 @@ public record AdaptedChannelImpl(Channel channel, Converter converter,
     }
 
     @Override
-    public <T> IncomingMessage<T> receive(String routingKey, Class<T> rClass,
-                                          long waitTime, TimeUnit timeUnit) {
+    public <T> CompletableFuture<IncomingMessage<T>> receive(String routingKey, Class<T> rClass) {
         ReceiveConsumer<T, IncomingMessage<T>> receiveConsumer = CompletableFuture::complete;
-        return receiveConsumer.receiveMessage(routingKey, this, rClass,
-                true, waitTime, timeUnit);
+        return receiveConsumer.receiveMessage(routingKey, this, rClass, true);
     }
 
     @Override

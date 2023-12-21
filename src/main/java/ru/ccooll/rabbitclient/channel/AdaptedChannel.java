@@ -14,7 +14,6 @@ import java.io.Closeable;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 /**
@@ -123,12 +122,7 @@ public interface AdaptedChannel extends Closeable {
 
     OutgoingBatchMessage send(RoutingData routingData, OutgoingBatchMessage message);
 
-    default <T> IncomingMessage<T> receive(String routingKey, Class<T> rClass) {
-        return receive(routingKey, rClass, -1, TimeUnit.MILLISECONDS);
-    }
-
-    <T> IncomingMessage<T> receive(String routingKey, Class<T> rClass,
-                                                      long waitTime, TimeUnit timeUnit);
+    <T> CompletableFuture<IncomingMessage<T>> receive(String routingKey, Class<T> rClass);
 
     default <T> String addConsumer(String routingKey, Class<T> cClass, Consumer<IncomingMessage<T>> consumer) {
         return addConsumer(routingKey, true, cClass, consumer);

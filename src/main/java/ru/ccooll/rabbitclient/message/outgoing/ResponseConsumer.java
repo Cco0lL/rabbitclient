@@ -7,7 +7,6 @@ import ru.ccooll.rabbitclient.message.incoming.Incoming;
 import ru.ccooll.rabbitclient.message.incoming.IncomingMessage;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 
 @FunctionalInterface
 interface ResponseConsumer<R, T extends Incoming<R>> {
@@ -15,8 +14,7 @@ interface ResponseConsumer<R, T extends Incoming<R>> {
     void consume(Class<R> rclass, IncomingMessage<R> message,
                  CompletableFuture<T> forComplete);
 
-    default T consumeResponse(Class<R> rClass, Outgoing message,
-                                                 boolean autoAck, long waitTime, TimeUnit timeUnit) {
+    default CompletableFuture<T> consumeResponse(Class<R> rClass, Outgoing message, boolean autoAck) {
         if (message.isRequestedResponse()) {
             throw new IllegalStateException("response already requested");
         }
@@ -32,8 +30,10 @@ interface ResponseConsumer<R, T extends Incoming<R>> {
         ReceiveConsumer<R, T> receiveConsumer = (forComplete, incomingMessage) ->
                 consume(rClass, incomingMessage, forComplete);
 
-        T response = receiveConsumer.receiveMessage(replyTo, channel, rClass, autoAck, waitTime, timeUnit);
-        channel.removeQueue(replyTo);
-        return response;
+        return receiveConsumer.receiveMessage(replyTo, channel, rClass, autoAck)
+                .thenApply(it -> {
+                    channel.removeQueue(replyTo);
+                    return it;
+                });
     }
 }

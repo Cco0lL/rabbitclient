@@ -9,7 +9,6 @@ import ru.ccooll.rabbitclient.message.incoming.IncomingMessage;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 
 /**
  * represents interface that able to request response
@@ -23,21 +22,14 @@ public interface Outgoing extends Message {
 
     boolean isRequestedResponse();
 
-    default <T> IncomingMessage<T> responseRequest(Class<T> rClass) {
-        return responseRequest(rClass, -1, TimeUnit.MILLISECONDS);
-    }
 
-    default <T> IncomingMessage<T> responseRequest(Class<T> rClass, long waitTime, TimeUnit timeUnit) {
+    default <T> CompletableFuture<IncomingMessage<T>> responseRequest(Class<T> rClass) {
         ResponseConsumer<T, IncomingMessage<T>> responseConsumer =
                 (rclass, message, forComplete) -> forComplete.complete(message);
-        return responseConsumer.consumeResponse(rClass, this, true, waitTime, timeUnit);
+        return responseConsumer.consumeResponse(rClass, this, true);
     }
 
-    default <T> IncomingBatchMessage<T> responseRequestBatch(Class<T> rClass) {
-        return responseRequestBatch(rClass, -1, TimeUnit.MILLISECONDS);
-    }
-
-    default <T> IncomingBatchMessage<T> responseRequestBatch(Class<T> rClass, long waitTime, TimeUnit timeUnit) {
+    default <T> CompletableFuture<IncomingBatchMessage<T>> responseRequestBatch(Class<T> rClass) {
         List<T> messages = new ArrayList<>();
         ResponseConsumer<T, IncomingBatchMessage<T>> responseConsumer = (rclass, message, forComplete) -> {
             messages.add(message.message());
@@ -55,6 +47,6 @@ public interface Outgoing extends Message {
                 channel.ack(envelope.getDeliveryTag(), true);
             }
         };
-        return responseConsumer.consumeResponse(rClass, this, false, waitTime, timeUnit);
+        return responseConsumer.consumeResponse(rClass, this, false);
     }
 }
